@@ -1,26 +1,1578 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FDE 案例 100</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 100vh; margin: 0; padding: 24px; text-align: center;
-      background: #fafafa; color: #1f2328;
-    }
-    @media (prefers-color-scheme: dark) {
-      body { background: #0d1117; color: #e6edf3; }
-    }
-    h1 { font-size: 1.6rem; margin-bottom: 8px; }
-    p { color: #888; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDE 案例 100 · 场景分析｜24 份田野访谈的结构化解读</title>
+<style>
+/* ============================================================
+   设计系统 —— 视觉母题：田野调查档案（Field Archive）
+   form 来自内容的哪里：
+   24 份带编号的访谈卷宗 + Q1–Q6 的固定提问结构 + 现场勘查痕迹
+   → 档案盒／索引卡／印章编号／工程标记笔的视觉语言
+   色彩论证：
+   · 底色取档案室深色装订布面的墨蓝（非纯黑、非 #0D1117），oklch L .16 H250 低 chroma
+   · 主 accent 取「印章赭橙 + 工程标记笔」，chroma 压到 .145 模拟油墨与夜间现场光
+   · 青蓝 = 系统/数据层，苔绿 = 收益/效果层，砖红 = 阻力/挑战层（三者语义固定，不靠颜色单独传信息）
+   字体：纯系统栈。display 用衬线（卷宗/出版物气质），body 用系统无衬线，编号用等宽。
+   ============================================================ */
+:root{
+  --ink-900: oklch(0.145 0.022 252);
+  --ink-850: oklch(0.175 0.024 252);
+  --ink-800: oklch(0.205 0.026 252);
+  --ink-750: oklch(0.245 0.026 252);
+  --ink-700: oklch(0.30  0.024 252);
+  --line:    oklch(0.34  0.022 252);
+  --line-soft: oklch(0.28 0.022 252);
+
+  --fg:      oklch(0.94  0.008 252);
+  --fg-2:    oklch(0.815 0.012 252);
+  --fg-3:    oklch(0.685 0.014 252);
+
+  --stamp:   oklch(0.735 0.145 58);   /* 赭橙 · 印章/标记 */
+  --stamp-d: oklch(0.60  0.13  58);
+  --sys:     oklch(0.72  0.095 215);  /* 青蓝 · 系统与数据 */
+  --gain:    oklch(0.815 0.135 152);  /* 苔绿 · 收益与效果 */
+  --risk:    oklch(0.70  0.125 25);   /* 砖红 · 阻力与挑战 */
+
+  --font-display: "Songti SC","STSong","Source Han Serif SC","Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+  --font-body: -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+  --font-mono: ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+
+  --w: 1280px;
+  --r: 3px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  background:var(--ink-900);color:var(--fg);
+  font-family:var(--font-body);font-size:15px;line-height:1.75;
+  text-wrap:pretty;
+  background-image:
+    linear-gradient(oklch(0.20 0.02 252 / 0.55) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.20 0.02 252 / 0.55) 1px, transparent 1px);
+  background-size:64px 64px,64px 64px;
+  background-attachment:fixed;
+}
+::selection{background:var(--stamp);color:var(--ink-900)}
+a{color:var(--stamp);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--stamp);outline-offset:3px}
+
+.wrap{max-width:var(--w);margin:0 auto;padding:0 28px}
+
+/* ---------- 顶部导航 ---------- */
+.masthead{
+  position:sticky;top:0;z-index:50;
+  background:oklch(0.145 0.022 252 / 0.94);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.mast-in{max-width:var(--w);margin:0 auto;padding:0 28px;height:56px;display:flex;align-items:center;gap:24px}
+.mast-mark{font-family:var(--font-mono);font-size:14px;letter-spacing:.14em;color:var(--stamp);white-space:nowrap;font-weight:600}
+.mast-nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1}
+.mast-nav::-webkit-scrollbar{display:none}
+.mast-nav a{
+  font-size:14px;color:var(--fg-3);padding:6px 11px;border-radius:var(--r);
+  white-space:nowrap;transition:color .18s,background .18s;
+}
+.mast-nav a:hover{color:var(--fg);background:var(--ink-800);text-decoration:none}
+.mast-nav a.on{color:var(--ink-900);background:var(--stamp);font-weight:600}
+
+/* ---------- HERO ---------- */
+.hero{padding:88px 0 64px;position:relative;overflow:hidden}
+.hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(760px 420px at 78% 8%, oklch(0.735 0.145 58 / 0.10), transparent 68%);
+}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:56px;align-items:start;position:relative}
+.kicker{
+  font-family:var(--font-mono);font-size:14px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--stamp);display:flex;align-items:center;gap:12px;margin-bottom:22px;
+}
+.kicker::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--stamp),transparent)}
+h1.title{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(38px,5.4vw,68px);line-height:1.1;letter-spacing:-.025em;
+  text-wrap:balance;margin-bottom:8px;
+}
+h1.title em{font-style:normal;color:var(--stamp);position:relative}
+.subtitle{font-family:var(--font-display);font-size:clamp(17px,2vw,22px);color:var(--fg-2);line-height:1.6;margin-bottom:28px;letter-spacing:.01em}
+.thesis{
+  border-left:2px solid var(--stamp);padding:4px 0 4px 20px;
+  color:var(--fg-2);font-size:15.5px;line-height:1.95;max-width:60ch;
+}
+.thesis strong{color:var(--fg);font-weight:600}
+.hero-side{display:flex;flex-direction:column;gap:14px}
+.stat-card{
+  border:1px solid var(--line);background:var(--ink-850);
+  padding:18px 20px;display:flex;align-items:baseline;gap:14px;
+  position:relative;transition:border-color .2s,transform .2s;
+}
+.stat-card:hover{border-color:var(--stamp);transform:translateX(3px)}
+.stat-num{font-family:var(--font-mono);font-size:34px;font-weight:700;letter-spacing:-.03em;color:var(--stamp);line-height:1}
+.stat-card:nth-child(2) .stat-num{color:var(--sys)}
+.stat-card:nth-child(3) .stat-num{color:var(--gain)}
+.stat-card:nth-child(4) .stat-num{color:var(--risk)}
+.stat-lbl{font-size:14px;color:var(--fg-3);line-height:1.55}
+.stat-lbl b{display:block;color:var(--fg-2);font-size:14px;font-weight:600;margin-bottom:2px}
+
+/* ---------- 通用 section ---------- */
+section.blk{padding:64px 0;border-top:1px solid var(--line-soft);scroll-margin-top:60px}
+.hero{scroll-margin-top:60px}
+.sec-head{margin-bottom:38px;max-width:76ch}
+.sec-no{font-family:var(--font-mono);font-size:14px;letter-spacing:.2em;color:var(--fg-3);margin-bottom:12px}
+.sec-no span{color:var(--stamp)}
+h2.sec-title{
+  font-family:var(--font-display);font-size:clamp(26px,3.2vw,38px);font-weight:700;
+  letter-spacing:-.02em;line-height:1.25;margin-bottom:14px;text-wrap:pretty;
+}
+.sec-desc{color:var(--fg-3);font-size:15px;line-height:1.85}
+.sec-desc strong{color:var(--fg-2);font-weight:600}
+
+.panel{border:1px solid var(--line);background:var(--ink-850);padding:24px}
+.panel-h{
+  font-family:var(--font-mono);font-size:14px;letter-spacing:.14em;color:var(--fg-3);
+  text-transform:uppercase;padding-bottom:12px;margin-bottom:18px;border-bottom:1px solid var(--line-soft);
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+}
+
+/* ---------- Q1–Q6 框架 ---------- */
+.q-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;border:1px solid var(--line);background:var(--ink-850)}
+.q-cell{padding:22px 20px;border-right:1px solid var(--line-soft);position:relative;transition:background .2s}
+.q-cell:last-child{border-right:none}
+.q-cell:hover{background:var(--ink-800)}
+.q-tag{
+  font-family:var(--font-mono);font-size:14px;letter-spacing:.1em;color:var(--ink-900);
+  background:var(--stamp);padding:2px 8px;display:inline-block;margin-bottom:14px;font-weight:700;
+}
+.q-cell:nth-child(2) .q-tag{background:var(--sys)}
+.q-cell:nth-child(3) .q-tag{background:var(--sys)}
+.q-cell:nth-child(4) .q-tag{background:var(--gain)}
+.q-cell:nth-child(5) .q-tag{background:var(--risk)}
+.q-cell:nth-child(6) .q-tag{background:var(--stamp-d)}
+.q-name{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
+.q-ask{font-size:14px;color:var(--fg-3);line-height:1.7;margin-bottom:12px}
+.q-out{font-size:14px;color:var(--fg-2);line-height:1.7;border-top:1px dashed var(--line);padding-top:10px}
+.q-out b{color:var(--stamp);font-weight:600}
+
+/* ---------- 场景矩阵 ---------- */
+.matrix-scroll{overflow-x:auto;border:1px solid var(--line);background:var(--ink-850)}
+.matrix{display:grid;grid-template-columns:172px repeat(8,minmax(88px,1fr));min-width:1000px}
+.mx-h{
+  padding:14px 10px;font-size:14px;font-family:var(--font-mono);color:var(--fg-3);
+  border-bottom:1px solid var(--line);border-right:1px solid var(--line-soft);
+  background:var(--ink-800);line-height:1.5;text-align:center;
+}
+.mx-h.corner{text-align:left;color:var(--stamp);letter-spacing:.1em}
+.mx-h b{display:block;color:var(--fg-2);font-size:14px;font-family:var(--font-body);font-weight:600;margin-bottom:3px}
+.mx-row-h{
+  padding:16px 14px;border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line);
+  font-size:14px;display:flex;flex-direction:column;gap:4px;background:var(--ink-850);
+}
+.mx-row-h b{font-weight:600;color:var(--fg)}
+.mx-row-h i{font-style:normal;font-family:var(--font-mono);font-size:14px;color:var(--fg-3)}
+.mx-cell{
+  border-bottom:1px solid var(--line-soft);border-right:1px solid var(--line-soft);
+  padding:10px 8px;display:flex;flex-wrap:wrap;gap:5px;align-content:flex-start;min-height:56px;
+  transition:background .18s;
+}
+.mx-cell:hover{background:var(--ink-750)}
+.dot{
+  font-family:var(--font-mono);font-size:14px;font-weight:700;
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);background:var(--ink-800);color:var(--fg-2);
+  cursor:pointer;transition:all .16s;border-radius:2px;
+}
+.dot:hover{background:var(--stamp);color:var(--ink-900);border-color:var(--stamp);transform:scale(1.14)}
+.dot.act{background:var(--stamp);color:var(--ink-900);border-color:var(--stamp)}
+.mx-empty{width:100%;text-align:center;color:var(--ink-700);font-family:var(--font-mono);font-size:14px;line-height:36px}
+
+/* ---------- 图表 ---------- */
+.chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.chart-box{height:330px;width:100%}
+.chart-note{font-size:14px;color:var(--fg-3);margin-top:14px;line-height:1.85;padding-top:12px;border-top:1px dashed var(--line)}
+.chart-note b{color:var(--fg-2)}
+
+/* ---------- 方法论链路 ---------- */
+.flow{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:0;border:1px solid var(--line);background:var(--ink-850)}
+.flow-step{padding:20px 16px;border-right:1px solid var(--line-soft);position:relative;transition:background .2s;display:flex;flex-direction:column}
+.flow-step:last-child{border-right:none}
+.flow-step:hover{background:var(--ink-800)}
+.flow-idx{font-family:var(--font-mono);font-size:26px;font-weight:700;color:var(--ink-700);line-height:1;margin-bottom:10px;letter-spacing:-.04em}
+.flow-step:hover .flow-idx{color:var(--stamp)}
+.flow-name{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
+.flow-desc{font-size:14px;color:var(--fg-3);line-height:1.7}
+.flow-ev{margin-top:auto;padding-top:12px;border-top:1px dashed var(--line);font-family:var(--font-mono);font-size:14px;color:var(--sys);line-height:1.7;letter-spacing:.02em}
+
+/* ---------- 指标墙 ---------- */
+.metric-list{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);background:var(--ink-850)}
+.metric-row{
+  display:grid;grid-template-columns:64px minmax(0,1.5fr) minmax(0,2.2fr) minmax(0,1fr);
+  gap:18px;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line-soft);
+  transition:background .18s;
+}
+.metric-row:last-child{border-bottom:none}
+.metric-row:hover{background:var(--ink-800)}
+.m-no{font-family:var(--font-mono);font-size:14px;color:var(--stamp);font-weight:700}
+.m-name{font-size:14px;color:var(--fg-2);line-height:1.5}
+.m-name b{display:block;color:var(--fg);font-weight:600;font-size:14px}
+.m-bar{display:flex;flex-direction:column;gap:5px}
+.m-bars{display:grid;gap:5px}
+.m-row2{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:9px;align-items:center}
+.m-lbl2{font-family:var(--font-mono);font-size:14px;letter-spacing:.08em;color:var(--fg-3)}
+.m-track2{height:8px;background:var(--ink-750);border-radius:1px;overflow:hidden}
+.m-fill2{height:100%;border-radius:1px;min-width:4px;box-shadow:0 0 0 1px oklch(1 0 0 / 0.06)}
+.m-fill2.bef{background:var(--risk);opacity:.72}
+.m-fill2.aft{background:var(--gain)}
+.m-v2{font-family:var(--font-mono);font-size:14px;white-space:nowrap}
+.m-v2.bef{color:var(--risk)}
+.m-v2.aft{color:var(--gain);font-weight:700}
+.m-kind{font-family:var(--font-mono);font-size:14px;letter-spacing:.1em;color:var(--fg-3);margin-top:2px}
+.m-track{height:9px;background:var(--ink-750);position:relative;border-radius:1px;overflow:hidden}
+.m-fill{position:absolute;left:0;top:0;bottom:0;border-radius:1px}
+.m-fill.b{background:var(--risk);opacity:.62}
+.m-fill.a{background:var(--gain)}
+.m-vals{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:14px;color:var(--fg-3);letter-spacing:.01em}
+.m-vals .aft{color:var(--gain);font-weight:700}
+.m-vals .bef{color:var(--risk)}
+.m-mult{font-family:var(--font-mono);font-size:19px;font-weight:700;color:var(--stamp);text-align:right;letter-spacing:-.03em}
+.m-mult small{display:block;font-size:14px;color:var(--fg-3);font-weight:400;letter-spacing:.02em;margin-top:4px;line-height:1.55;font-family:var(--font-body)}
+.metric-head{
+  display:grid;grid-template-columns:64px minmax(0,1.5fr) minmax(0,2.2fr) minmax(0,1fr);
+  gap:18px;padding:11px 20px;background:var(--ink-800);border-bottom:1px solid var(--line);
+  font-family:var(--font-mono);font-size:14px;letter-spacing:.14em;color:var(--fg-3);text-transform:uppercase;
+}
+.metric-head span:last-child{text-align:right}
+.metric-disclaimer{font-size:14px;color:var(--fg-3);margin-top:14px;line-height:1.7;padding:12px 16px;border:1px dashed var(--line);background:oklch(0.70 0.125 25 / 0.045)}
+.metric-disclaimer b{color:var(--risk)}
+
+/* ---------- 案例档案卡 ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;align-items:center}
+.f-label{font-family:var(--font-mono);font-size:14px;letter-spacing:.14em;color:var(--fg-3);margin-right:6px;text-transform:uppercase}
+.chip{
+  font-size:14px;padding:6px 13px;border:1px solid var(--line);background:var(--ink-850);
+  color:var(--fg-2);cursor:pointer;border-radius:2px;transition:all .16s;min-height:32px;
+}
+.chip:hover{border-color:var(--stamp);color:var(--fg)}
+.chip.on{background:var(--stamp);border-color:var(--stamp);color:var(--ink-900);font-weight:600}
+.chip.n{font-family:var(--font-mono);font-size:14px}
+.f-count{margin-left:auto;font-family:var(--font-mono);font-size:14px;color:var(--fg-3)}
+.f-count b{color:var(--stamp)}
+
+.cases-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.case{
+  border:1px solid var(--line);background:var(--ink-850);
+  display:flex;flex-direction:column;transition:border-color .2s,background .2s;
+}
+.case:hover{border-color:var(--line)}
+.case.dim{display:none}
+.case-top{padding:20px 22px 16px;border-bottom:1px solid var(--line-soft);display:flex;gap:16px;align-items:flex-start}
+.case-no{
+  font-family:var(--font-mono);font-size:14px;font-weight:700;color:var(--ink-900);
+  background:var(--stamp);padding:3px 0;width:42px;text-align:center;flex-shrink:0;letter-spacing:.04em;
+}
+.case-t{flex:1;min-width:0}
+.case-title{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:-.015em;line-height:1.35;margin-bottom:8px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{
+  font-family:var(--font-mono);font-size:14px;letter-spacing:.06em;padding:2px 7px;
+  border:1px solid var(--line);color:var(--fg-3);border-radius:2px;background:var(--ink-800);
+}
+.tag.ind{border-color:oklch(0.72 0.095 215 / .42);color:var(--sys)}
+.tag.geo{border-color:oklch(0.735 0.145 58 / .34);color:var(--stamp)}
+.tag.arch{border-color:oklch(0.76 0.115 152 / .34);color:var(--gain)}
+.case-body{padding:0;flex:1}
+.seg{padding:14px 22px;border-bottom:1px solid var(--line-soft)}
+.seg:last-child{border-bottom:none}
+.seg-h{
+  font-family:var(--font-mono);font-size:14px;letter-spacing:.16em;text-transform:uppercase;
+  margin-bottom:7px;display:flex;align-items:center;gap:8px;
+}
+.seg-h::before{content:"";width:3px;height:3px;background:currentColor;border-radius:50%;flex-shrink:0}
+.seg-h.pain{color:var(--risk)}
+.seg-h.before{color:var(--fg-3)}
+.seg-h.ai{color:var(--sys)}
+.seg-h.gain{color:var(--gain)}
+.seg-h.risk{color:var(--risk)}
+.seg-h.quote{color:var(--stamp)}
+.seg p{font-size:14px;color:var(--fg-2);line-height:1.85}
+.seg p strong{color:var(--fg);font-weight:600}
+.seg.quote-seg{background:oklch(0.735 0.145 58 / 0.045)}
+.seg.quote-seg p{
+  font-family:var(--font-display);font-size:15px;color:var(--fg);line-height:1.75;
+  font-style:normal;letter-spacing:-.005em;
+}
+.gain-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.gain-list li{font-size:14px;color:var(--fg-2);line-height:1.7;display:flex;gap:9px}
+.gain-list li::before{content:"→";color:var(--gain);font-family:var(--font-mono);flex-shrink:0;font-size:14px;line-height:1.9}
+.gain-list li b{color:var(--gain);font-family:var(--font-mono);font-weight:700;font-size:14px}
+.div-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.div-pill{font-size:14px;padding:2px 8px;border-radius:2px;line-height:1.7}
+.div-pill.ai{background:oklch(0.72 0.095 215 / .13);color:var(--sys);border:1px solid oklch(0.72 0.095 215 / .3)}
+.div-pill.hu{background:oklch(0.735 0.145 58 / .12);color:var(--stamp);border:1px solid oklch(0.735 0.145 58 / .28)}
+.div-pill.sys{background:oklch(0.76 0.115 152 / .11);color:var(--gain);border:1px solid oklch(0.76 0.115 152 / .26)}
+
+/* ---------- Q3 流程图 ---------- */
+.flowchart{margin-top:14px;padding-top:13px;border-top:1px dashed var(--line)}
+.fc-h{
+  font-family:var(--font-mono);font-size:14px;letter-spacing:.14em;color:var(--fg-3);
+  text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+}
+.fc-legend{display:flex;gap:9px;margin-left:auto;flex-wrap:wrap}
+.fc-lg{display:flex;align-items:center;gap:4px;font-size:14px;letter-spacing:.04em;color:var(--fg-3);text-transform:none}
+.fc-lg i{width:7px;height:7px;display:block;border-radius:1px;flex-shrink:0}
+.fc-chain{display:flex;flex-wrap:wrap;gap:26px 20px;align-items:stretch}
+.fc-node{
+  flex:0 1 auto;min-width:0;max-width:100%;position:relative;
+  background:var(--ink-800);border:1px solid var(--line-soft);border-left-width:3px;
+  padding:7px 10px 8px;display:flex;flex-direction:column;gap:2px;
+  transition:background .16s,border-color .16s;
+}
+.fc-node:hover{background:var(--ink-750);border-color:var(--line)}
+.fc-node.ai{border-left-color:var(--sys)}
+.fc-node.sys{border-left-color:var(--gain)}
+.fc-node.hu{border-left-color:var(--stamp)}
+.fc-node.in{border-left-color:var(--fg-3)}
+.fc-lab{font-size:14px;font-weight:600;color:var(--fg);line-height:1.4;letter-spacing:-.005em}
+.fc-det{font-size:14px;color:var(--fg-3);line-height:1.55}
+.fc-node.ai .fc-lab{color:oklch(0.86 0.05 215)}
+.fc-node.sys .fc-lab{color:oklch(0.88 0.06 152)}
+.fc-node.hu .fc-lab{color:oklch(0.87 0.07 58)}
+/* 箭头：正常指向右；折行处由 JS 加 .dn 改为指向下 */
+.fc-node:not(:last-child)::after{
+  content:"→";position:absolute;top:50%;right:-16px;transform:translateY(-50%);
+  font-family:var(--font-mono);font-size:14px;color:var(--fg-3);opacity:.7;line-height:1;
+}
+.fc-node.dn:not(:last-child)::after{
+  content:"↵";top:auto;bottom:-21px;right:auto;left:50%;transform:translateX(-50%);
+}
+@media(max-width:860px){
+  .fc-chain{flex-direction:column;gap:15px}
+  .fc-node{width:100%}
+  .fc-node:not(:last-child)::after{content:"↓";top:auto;bottom:-14px;right:auto;left:50%;transform:translateX(-50%)}
+  .fc-node.dn:not(:last-child)::after{content:"↓";bottom:-14px}
+}
+.case-toggle{
+  margin-top:auto;padding:11px 22px;background:var(--ink-800);border:none;border-top:1px solid var(--line);
+  color:var(--fg-3);font-size:14px;font-family:var(--font-mono);letter-spacing:.1em;cursor:pointer;
+  text-align:left;width:100%;transition:color .18s,background .18s;min-height:44px;
+}
+.case-toggle:hover{color:var(--stamp);background:var(--ink-750)}
+.case-extra{display:none}
+.case.open .case-extra{display:block}
+.case.open .case-toggle{color:var(--stamp)}
+
+/* ---------- 人机分工 ---------- */
+.split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid var(--line);background:var(--ink-850)}
+.split-col{padding:24px;border-right:1px solid var(--line-soft)}
+.split-col:last-child{border-right:none}
+.split-h{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.split-h .sq{width:11px;height:11px;flex-shrink:0}
+.split-h h3{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:-.01em}
+.split-sub{font-size:14px;color:var(--fg-3);margin-bottom:18px;line-height:1.65}
+.split-list{list-style:none;display:flex;flex-direction:column;gap:9px}
+.split-list li{font-size:14px;color:var(--fg-2);line-height:1.7;padding-left:14px;position:relative}
+.split-list li::before{content:"";position:absolute;left:0;top:9px;width:5px;height:1px;background:var(--fg-3)}
+.split-list li b{color:var(--fg);font-weight:600}
+.split-list li i{font-style:normal;font-family:var(--font-mono);font-size:14px;color:var(--fg-3)}
+
+/* ---------- 反模式 ---------- */
+.anti{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.anti-item{
+  border:1px solid var(--line);background:var(--ink-850);padding:18px 20px;
+  display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;transition:border-color .2s;
+}
+.anti-item:hover{border-color:oklch(0.70 0.125 25 / .55)}
+.anti-x{
+  font-family:var(--font-mono);font-size:15px;color:var(--risk);font-weight:700;
+  width:30px;height:30px;border:1px solid oklch(0.70 0.125 25 / .4);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.anti-t{font-size:14.5px;font-weight:600;color:var(--fg);margin-bottom:6px;line-height:1.5}
+.anti-d{font-size:14px;color:var(--fg-3);line-height:1.75}
+.anti-d b{color:var(--stamp);font-weight:600}
+
+/* ---------- 金句墙 ---------- */
+.quotes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.quote-card{
+  border:1px solid var(--line);background:var(--ink-850);padding:22px 20px;
+  display:flex;flex-direction:column;gap:14px;transition:transform .2s,border-color .2s;
+}
+.quote-card:hover{transform:translateY(-3px);border-color:var(--stamp)}
+.quote-mark{font-family:var(--font-display);font-size:38px;color:var(--stamp);line-height:.6;opacity:.6}
+.quote-txt{font-family:var(--font-display);font-size:16px;line-height:1.7;color:var(--fg);letter-spacing:-.005em;flex:1}
+.quote-src{font-family:var(--font-mono);font-size:14px;color:var(--fg-2);letter-spacing:.06em;padding-top:12px;border-top:1px solid var(--line-soft)}
+.quote-src b{color:var(--stamp);font-weight:700}
+
+/* ---------- 洞察条 ---------- */
+.insight{
+  border:1px solid var(--stamp);background:oklch(0.735 0.145 58 / 0.06);
+  padding:26px 30px;margin-top:28px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:start;
+}
+.insight-mark{font-family:var(--font-mono);font-size:14px;letter-spacing:.18em;color:var(--stamp);font-weight:700;writing-mode:vertical-rl;text-orientation:upright;padding-top:4px}
+.insight h3{font-family:var(--font-display);font-size:21px;font-weight:700;margin-bottom:12px;letter-spacing:-.015em;line-height:1.4}
+.insight p{font-size:14px;color:var(--fg-2);line-height:1.9;max-width:88ch}
+.insight p+p{margin-top:10px}
+.insight b{color:var(--stamp);font-weight:600}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);padding:44px 0 56px;margin-top:24px}
+.foot-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:44px}
+.foot-note{font-size:14px;color:var(--fg-3);line-height:1.9}
+.foot-note b{color:var(--fg-2);font-weight:600}
+.foot-meta{font-family:var(--font-mono);font-size:14px;color:var(--fg-3);line-height:2;letter-spacing:.05em}
+.foot-meta span{color:var(--stamp)}
+
+/* ---------- 响应式 ---------- */
+@media(max-width:1100px){
+  .q-grid,.flow{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .q-cell,.flow-step{border-bottom:1px solid var(--line-soft)}
+  .quotes{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hero-grid{grid-template-columns:1fr;gap:36px}
+}
+@media(max-width:860px){
+  .wrap{padding:0 18px}
+  .mast-in{padding:0 18px}
+  .cases-grid,.chart-grid,.anti,.split{grid-template-columns:1fr}
+  .split-col{border-right:none;border-bottom:1px solid var(--line-soft)}
+  .q-grid,.flow{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .q-cell,.flow-step{border-right:1px solid var(--line-soft)}
+  .metric-row,.metric-head{grid-template-columns:44px minmax(0,1fr);gap:10px}
+  .metric-head span:nth-child(3),.metric-head span:nth-child(4){display:none}
+  .m-bar{grid-column:1/-1}
+  .m-mult{grid-column:1/-1;text-align:left}
+  .quotes{grid-template-columns:1fr}
+  .foot-grid{grid-template-columns:1fr;gap:24px}
+  .insight{grid-template-columns:1fr;gap:10px}
+  .insight-mark{writing-mode:horizontal-tb}
+  section.blk{padding:48px 0}
+  .hero{padding:56px 0 44px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
 </head>
 <body>
-  <h1>FDE 案例 100</h1>
-  <p>内容建设中，敬请期待…</p>
+
+<header class="masthead">
+  <div class="mast-in">
+    <div class="mast-mark">FDE·案例100</div>
+    <nav class="mast-nav" id="nav" aria-label="章节导航">
+      <a href="#hero">封面</a>
+      <a href="#framework">访谈框架</a>
+      <a href="#map">场景地图</a>
+      <a href="#stats">分布统计</a>
+      <a href="#method">方法论</a>
+      <a href="#metrics">效果指标</a>
+      <a href="#cases">24份档案</a>
+      <a href="#division">人机分工</a>
+      <a href="#antipattern">反模式</a>
+      <a href="#quotes">金句墙</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero" id="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="kicker">DATAWHALE · FDE 案例 100 · 场景分析报告</div>
+        <h1 class="title">24 份田野访谈<br>背后的<em>真实场景</em></h1>
+        <p class="subtitle">不是「AI 能做什么」的技术清单，而是「企业每天到底怎么工作」的现场记录</p>
+        <div class="thesis">
+          <p>AI 进入企业的方式并不均匀。它<strong>很少从宏大的「AI 转型」开始</strong>，而往往先出现在某个具体、细小、甚至不起眼的场景里——一张填不完的表、一份对不上的账、一个找不到的文件、一句报不出的价。</p>
+          <p style="margin-top:12px">一旦 AI 真正进入，问题就不再只是「模型能不能做到」，而是：什么问题值得解决、业务部门如何参与、数据和知识如何组织、新的工作流程如何建立、<strong>上线后由谁持续运营</strong>。改变最终会进入组织本身。</p>
+          <p style="margin-top:12px;color:var(--stamp)">「一次项目的结束，不应该意味着 AI 能力的离开。」</p>
+        </div>
+      </div>
+      <div class="hero-side">
+        <div class="stat-card"><div class="stat-num">24</div><div class="stat-lbl"><b>份深度访谈</b>统一 Q1–Q6 六问框架，覆盖原书 246 页</div></div>
+        <div class="stat-card"><div class="stat-num">12</div><div class="stat-lbl"><b>个行业大类</b>制造、电商零售、政务、法律、金融、电信、建筑等</div></div>
+        <div class="stat-card"><div class="stat-num">8</div><div class="stat-lbl"><b>类场景原型</b>跨行业反复出现的同一批问题结构</div></div>
+        <div class="stat-card"><div class="stat-num">10</div><div class="stat-lbl"><b>类共性挑战</b>数据、组织、人、既有系统…技术只占约 20%</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 访谈框架 ===================== -->
+<section class="blk" id="framework">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no"><span>01</span> / 访谈框架 —— 24 份卷宗共用同一张提问表</div>
+      <h2 class="sec-title">Q1–Q6：一条从「场景」走到「组织」的追问链</h2>
+      <p class="sec-desc">全书 24 个案例严格使用同一组六个问题。这不是巧合——<strong>提问顺序本身就是一套方法论</strong>：先问场景不问技术，先问过去怎么做再问 AI 怎么做，先问效果再问新问题，最后落到「怎么才能更好地部署」。六问的顺序，恰好对应项目从立项到沉淀的完整生命周期。</p>
+    </div>
+    <div class="q-grid">
+      <div class="q-cell">
+        <span class="q-tag">Q1</span>
+        <div class="q-name">场景与问题</div>
+        <div class="q-ask">你应用 AI 的具体场景是什么？这个问题长什么样？</div>
+        <div class="q-out">先锚定<b>业务现场</b>，不允许从技术能力出发</div>
+      </div>
+      <div class="q-cell">
+        <span class="q-tag">Q2</span>
+        <div class="q-name">原有解法</div>
+        <div class="q-ask">在你参与之前，这个问题过去是怎么解决的？</div>
+        <div class="q-out">找出<b>旧方案为何失效</b>——这是 AI 的真正入口</div>
+      </div>
+      <div class="q-cell">
+        <span class="q-tag">Q3</span>
+        <div class="q-name">思路与步骤</div>
+        <div class="q-ask">使用 AI 解决的整体思路和关键步骤是什么？</div>
+        <div class="q-out">拆解出<b>人机分工</b>与工程化路径</div>
+      </div>
+      <div class="q-cell">
+        <span class="q-tag">Q4</span>
+        <div class="q-name">实际效果</div>
+        <div class="q-ask">相比传统方式，使用 AI 后的实际效果如何？</div>
+        <div class="q-out">要<b>业务指标</b>，不要模型准确率</div>
+      </div>
+      <div class="q-cell">
+        <span class="q-tag">Q5</span>
+        <div class="q-name">新问题</div>
+        <div class="q-ask">部署过程中是否遇到新挑战？怎么解决的？</div>
+        <div class="q-out">暴露<b>真实的坑</b>——数据、人、组织、成本</div>
+      </div>
+      <div class="q-cell">
+        <span class="q-tag">Q6</span>
+        <div class="q-name">部署建议</div>
+        <div class="q-ask">怎么才能更好把 AI 部署到实际业务中？</div>
+        <div class="q-out">沉淀为<b>可复用的方法论</b></div>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-mark">洞察 A</div>
+      <div>
+        <h3>六问的重心，明显压在「技术之外」</h3>
+        <p>六个问题里只有 Q3 一问直接关于技术实现，其余五问全部指向业务现场、历史包袱、组织反应与长期运营。这套提问表本身就传递了全书的立场：<b>FDE 的工作量并不主要在写代码，而在于把 AI 翻译进一套已经在运转的组织里。</b></p>
+        <p>NO.9 的说法最直白——「单纯从技术上已经能落地，其实已经成功了 80%，真正容易让项目『死掉』的，是业务、人和组织」；NO.24 给出量化版——「难点不在技术层，技术大概只占 20%」；NO.14 则把它排成一条难度序列：<b>人 ＞ 组织 ＞ 数据 ＞ 技术</b>。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 场景地图 ===================== -->
+<section class="blk" id="map">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no"><span>02</span> / 场景地图 —— 行业 × 场景原型矩阵</div>
+      <h2 class="sec-title">24 个案例落在 12 个行业、8 类问题结构上</h2>
+      <p class="sec-desc">把每个案例按「所处行业」与「问题结构原型」双向定位，可以看清一件事：<strong>行业千差万别，但问题结构高度重复。</strong>德国零部件厂的老师傅经验、律所的上千页卷宗、鞋服电商的素材生产、跨境快消的经销商数据，落到 AI 面前其实是同一批题。<br>点击矩阵中的编号可跳转到对应案例档案。</p>
+    </div>
+    <div class="matrix-scroll">
+      <div class="matrix" id="matrix"></div>
+    </div>
+    <div class="insight">
+      <div class="insight-mark">洞察 B</div>
+      <div>
+        <h3>最密的三格：跨系统数据打通、隐性经验沉淀、经营分析与文档处理</h3>
+        <p>矩阵中落点最集中的原型是 <b>跨系统数据打通与搬运（13 例）</b>、<b>隐性经验／老师傅知识沉淀（9 例）</b>、<b>经营分析与决策支持（9 例）</b>，紧随其后的是 <b>非结构化文档与图像处理（8 例）</b>与 <b>内容／报告生成（8 例）</b>。一个案例往往同时命中多个原型——NO.17 既是文档处理又是报价定价，NO.24 一口气占了数据打通、文档处理、经营分析三格——所以八类原型的命中总数（63）远大于案例数（24）。这也说明：<b>真实场景从来不是单一题型，而是几类问题的叠加。</b></p>
+        <p>落点最稀疏的是「报价与定价」，只有 3 例（NO.6 装车收益测算、NO.17 非标制造报价、NO.23 工程租赁报价）。但这 3 例恰恰是全书收益最硬的——它们都能算出明确的经济账：NO.6 的「98 方保本、每超 1 方增收 100 美元」，NO.23 的「长尾订单被承接就是纯增收」。<b>越靠近钱的场景，样本越少，但单例价值越高。</b></p>
+        <p>另一个值得注意的信号：8 例内容生成场景中，无一例外都加了人工判断或校验环节——NO.12 把一致性写进验收标准，NO.15 设了回退机制，NO.4 让 GIS 工具负责事实计算，NO.19 把 NRV 计算固化成确定性代码。<b>AI 生成内容本身很少是终点，它通常只是流程里的一个环节。</b></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 分布统计 ===================== -->
+<section class="blk" id="stats">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no"><span>03</span> / 分布统计 —— 五张图看清样本结构</div>
+      <h2 class="sec-title">样本结构：行业、地理、场景、技术栈、挑战</h2>
+      <p class="sec-desc">下面五张图分别回答五个问题：<strong>案例来自哪些行业、在哪里发生、解决的是哪类问题、用了什么技术、卡在了什么地方。</strong>其中「挑战类型」一张图信息量最大——它直接暴露了 AI 落地的真实成本结构。</p>
+    </div>
+    <div class="chart-grid">
+      <div class="panel">
+        <div class="panel-h"><span>行业分布</span><span>N=24</span></div>
+        <div class="chart-box" id="c1"></div>
+        <div class="chart-note"><b>读法：</b>制造／工业与电商／零售／消费两类合计占样本过半，说明 AI 最先跑通的仍是「有实物、有单据、有明确成本」的行业；纯知识服务（法律、金融、电信）各仅 1 例，样本偏薄，结论需谨慎外推。</div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><span>场景原型分布</span><span>可多标签</span></div>
+        <div class="chart-box" id="c2"></div>
+        <div class="chart-note"><b>读法：</b>一个案例常同时命中多个原型（如 NO.17 既是文档处理又是报价定价），故总数大于 24。前三类构成 AI 落地的「主战场」。</div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><span>挑战类型频次</span><span>按提及强度</span></div>
+        <div class="chart-box" id="c3"></div>
+        <div class="chart-note"><b>读法：</b>「数据质量／口径不统一」与「组织与人」两类显著领先，技术能力不足排在末位。这与 NO.14 的难度排序完全一致，是全书最强的一条跨案例共识。</div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><span>技术栈出现频次</span><span>提及案例数</span></div>
+        <div class="chart-box" id="c4"></div>
+        <div class="chart-note"><b>读法：</b>RAG／知识库与 Agent／垂类 Agent 是最常用的两块积木；值得注意的是「规则引擎／确定性代码」和「传统算法」的出现频次——<b>多个案例主动放弃让模型端到端解决，改回硬编码或运筹学</b>（NO.4「硬编码能解决，就可以硬编码」、NO.19 把 NRV 计算固化成确定性代码、NO.6 让大模型只做调度而三维计算交给 Python 算法）。</div>
+      </div>
+      <div class="panel" style="grid-column:1/-1">
+        <div class="panel-h"><span>地理与部署形态</span><span>样本构成</span></div>
+        <div class="chart-box" id="c5" style="height:290px"></div>
+        <div class="chart-note"><b>读法：</b>样本中有 8 例涉及海外或跨境场景（德国、美国、澳洲、东南亚、中俄边境、TikTok 海外），带来一类国内案例少见的约束——<b>数据能否离境、当地填报习惯、权限审批链路</b>。NO.5 光是数据合规就花了近一个月；NO.24 的难点之一是澳洲总部与中越经销商之间的口径与权限。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 方法论 ===================== -->
+<section class="blk" id="method">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no"><span>04</span> / 方法论 —— 24 个案例收敛出的同一条链路</div>
+      <h2 class="sec-title">FDE 八步法：从走进现场到留下能力</h2>
+      <p class="sec-desc">24 位受访者各自描述的路径高度一致，可以收敛成八个环节。NO.24 把它固化为五步「<strong>诊断、数据审计、窄 MVP、嵌入、扩展</strong>」并强调「顺序不能乱，理解业务永远在技术选型前面，赢得信任之后才扩面」；NO.19 则给出空间维度的「<strong>点—线—面</strong>」——面是战略价值，线是价值链，点是每个岗位的输入输出与 Know-how。</p>
+    </div>
+    <div class="flow">
+      <div class="flow-step"><div class="flow-idx">01</div><div class="flow-name">进现场</div><div class="flow-desc">跟岗、旁听、看操作，而不是开会收集需求。外部长驻会给业务压力，NO.19 甚至派一个 Agent 潜进业务群两三周只观察不解决。</div><div class="flow-ev">NO.1 · 3 · 4 · 8 · 13 · 17 · 19</div></div>
+      <div class="flow-step"><div class="flow-idx">02</div><div class="flow-name">重定义问题</div><div class="flow-desc">把表层需求追到经营根因。NO.8 从「ERP 不好用」追到重复采购与库存报废；NO.23 从「做个报价工具」追到长尾客户没人接。</div><div class="flow-ev">NO.2 · 8 · 10 · 20 · 23</div></div>
+      <div class="flow-step"><div class="flow-idx">03</div><div class="flow-name">窄 MVP 破冰</div><div class="flow-desc">主动收敛范围，先摘「最近最甜的桃子」。NO.4 从全市收到一个单元两条业务流；NO.24 第一版只做中国、一条产品线、一个问题。</div><div class="flow-ev">NO.4 · 9 · 12 · 22 · 24</div></div>
+      <div class="flow-step"><div class="flow-idx">04</div><div class="flow-name">定人机分工</div><div class="flow-desc">逐环节划分谁做什么。原则反复出现：AI 负责规模化与初稿，人负责判断、决策与担责。</div><div class="flow-ev">NO.5 · 12 · 19 · 21 · 22</div></div>
+      <div class="flow-step"><div class="flow-idx">05</div><div class="flow-name">嵌入原流程</div><div class="flow-desc">不推翻客户已有系统与习惯，在其上做能力叠加。NO.24 放弃自建平台改为叠加；NO.13 叫停重复建设；NO.16 保留 Teams/Slack 入口。</div><div class="flow-ev">NO.1 · 13 · 16 · 20 · 23 · 24</div></div>
+      <div class="flow-step"><div class="flow-idx">06</div><div class="flow-name">可追溯兜底</div><div class="flow-desc">每个结论可回溯到原始数据，关键节点设人工确认，不确定项进风险监控。NO.24「溯不回去的问题，我们就不让它答」。</div><div class="flow-ev">NO.9 · 17 · 19 · 21 · 24</div></div>
+      <div class="flow-step"><div class="flow-idx">07</div><div class="flow-name">陪跑迭代</div><div class="flow-desc">上线不是终点。NO.1 陪跑近两个月、全程约半年；NO.17 试运行 1–2 个月；NO.12 把反馈沉淀进文档让客户持续填写。</div><div class="flow-ev">NO.1 · 7 · 12 · 15 · 17</div></div>
+      <div class="flow-step"><div class="flow-idx">08</div><div class="flow-name">沉淀组织能力</div><div class="flow-desc">让客户自己长出能力。NO.18 帮企业建 20 人 AI 团队；NO.14 出现行政同事自己做的补货 Agent；NO.4 部门开始自沉淀 Skill。</div><div class="flow-ev">NO.4 · 11 · 14 · 18 · 19</div></div>
+    </div>
+    <div class="insight">
+      <div class="insight-mark">洞察 C</div>
+      <div>
+        <h3>八步里有六步在技术开始之前或之后</h3>
+        <p>把八个环节按「是否写代码」分类，只有第 4、6 两步是纯技术工作；第 1、2、3 步在技术开始之前，第 5、7、8 步在技术完成之后。<b>这解释了为什么 NO.11 会感叹「FDE 要接受一个事实：大量工作并不『AI』」</b>——修网络、理文件命名、配权限、等老板拍板、催一线测试，这些占了现场时间的大头。</p>
+        <p>也解释了 NO.11 的另一个判断：<b>「最理想的 FDE，是让客户越来越独立。」</b>NO.4 说得更具体——「好的 FDE 项目，是交付结束以后客户自己开始长出 AI 能力」；NO.18 把它列为评价标准——「一个好的 FDE 项目，除了留下几个应用，还应该帮助企业留下继续进化的能力」。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 效果指标 ===================== -->
+<section class="blk" id="metrics">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no"><span>05</span> / 效果指标 —— 可量化的前后对比</div>
+      <h2 class="sec-title">数字墙：16 个案例给出了可对比的量化结果</h2>
+      <p class="sec-desc">24 个案例中，16 个给出了明确的「前 → 后」量化对比，其余 8 个仍处于 POC／推进中或明确表示无法量化（并诚实说明了原因，如 NO.22 交付后失去了数据权限）。<strong>14 个耗时／工作量型指标按压缩倍数排序，1 个比率型指标（NO.24 审核发现率，越高越好）单列，1 个未量化（NO.1）。</strong>每行双条对比，条长代表数值量级，并标注了指标方向。</p>
+    </div>
+    <div class="metric-list">
+      <div class="metric-head"><span>NO.</span><span>案例 / 指标</span><span>改造前 → 改造后</span><span>倍数</span></div>
+      <div id="metricBody"></div>
+    </div>
+    <div class="metric-disclaimer">
+      <b>诚实说明：</b>以上数字全部摘自受访者自述，未经第三方审计；部分案例已明确脱敏（NO.24 对绝对值做过量级处理）。多数为<b>单次任务耗时</b>的对比，不等同于企业整体 ROI。NO.7 特别提醒其「写代码省 1/3、写文档省一半」仅为几天短期数据，不作长期结论；NO.20 明确表示尚不能证明经营指标已提升。倍数计算基于受访者给出的区间中值，仅作可视化相对比较之用。
+    </div>
+    <div class="insight">
+      <div class="insight-mark">洞察 D</div>
+      <div>
+        <h3>时间压缩最大的三例，都不是「生成内容」的场景</h3>
+        <p>压缩倍数最高的分别是 NO.21 建筑消防施工图（数天 → 约 30 分钟）、NO.4 城市规划研判报告（3–5 天 → 10–20 分钟）、NO.9 央企财务报销（半月–1 月 → 1–2 天）。三者的共同点是：<b>原来的耗时并不在「思考」，而在「跨系统搬运、查规范、对规则、填表」</b>——也就是最容易被工程化吃掉的部分。</p>
+        <p>而真正需要专业判断的环节，AI 并未替代，只是把人从执行者变成审核者。NO.21 给出了最清晰的角色迁移数据：引入 AI 前设计人员约 <b>70% 时间在执行类工作（绘制与规范检查）、30% 在专业判断</b>；AI 进入后这个比例被反转，人的重心移到审核与决策。</p>
+        <p>另一类被低估的价值是<b>「让企业重新做回过去因成本太高而放弃的事」</b>（NO.10）。NO.10 对账场景实测出门店 1–2 个百分点、部分 2–3 个百分点的差异——对纯利率而言这是很大的数字，但过去人工核对成本太高，总部甚至设了「容忍区间」直接放弃追查。NO.6 的装车案例更进一步，把收益算成硬经济账：<b>98 方是保本线，每超 1 方增收 100 美元</b>，改造后实测稳定在约 99 方，装载时间从 5 小时降到约 2 小时。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 24 份档案 ===================== -->
+<section class="blk" id="cases">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no"><span>06</span> / 案例档案 —— 24 份卷宗逐份拆解</div>
+      <h2 class="sec-title">每份档案：痛点场景 → 原有做法 → AI 方案与人机分工 → 量化效果 → 挑战 → 金句</h2>
+      <p class="sec-desc">以下卡片按原文编号排列（原书按 FDE 名字首字母排序）。每张卡片对应 Q1–Q6 六问的浓缩答案，<strong>「AI 方案」一段除人机分工标签外，还按受访者自述的顺序还原了完整实施链路</strong>——每个节点标注角色：<span style="color:var(--fg-3)">灰＝输入／前置</span>、<span style="color:var(--sys)">蓝＝AI 承担</span>、<span style="color:var(--gain)">绿＝系统承担</span>、<span style="color:var(--stamp)">橙＝人承担</span>。可用下方筛选器按行业或场景原型过滤。</p>
+    </div>
+    <div class="filters" id="filters">
+      <span class="f-label">行业</span>
+      <span class="f-label" style="margin-left:18px">场景原型</span>
+      <span class="f-count" id="fcount"></span>
+    </div>
+    <div class="cases-grid" id="casesGrid"></div>
+  </div>
+</section>
+
+<!-- ===================== 人机分工 ===================== -->
+<section class="blk" id="division">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no"><span>07</span> / 人机分工 —— 一条反复被重画的边界</div>
+      <h2 class="sec-title">什么交给 AI、什么交给系统、什么必须留给人</h2>
+      <p class="sec-desc">24 个案例几乎没有一个把任务整体交给大模型。<strong>「AI 负责规模化，人负责最后的业务判断」（NO.12）是出现频率最高的一条原则</strong>，但它的具体切法因行业责任强度而不同——消防设计和法务审核的边界，明显比营销文案更保守。<br>24 份档案的实施链路合计 <strong>187 个步骤</strong>，按角色统计：<span style="color:var(--stamp)">人 66 步（35%）</span>、<span style="color:var(--gain)">系统／确定性代码 76 步（41%）</span>、<span style="color:var(--sys)">AI 仅 41 步（22%）</span>。也就是说，<strong>在受访者真实描述的流程里，AI 只占约五分之一的环节，超过四分之三由人和确定性系统承担</strong>——这与 NO.24「技术大概只占 20%」的判断在步骤层面形成了独立印证。</p>
+    </div>
+    <div class="split">
+      <div class="split-col">
+        <div class="split-h"><span class="sq" style="background:var(--sys)"></span><h3>交给 AI</h3></div>
+        <div class="split-sub">规模化、非结构化理解、初稿生成——错了可由人拦下的环节</div>
+        <ul class="split-list">
+          <li><b>非结构化抽取</b>：图片票据、CAD 图纸、合同卷宗、物流照片读成结构化字段 <i>NO.2·10·11·17·21·22·24</i></li>
+          <li><b>第一轮筛选与匹配</b>：达人名单、简历打分、待审包装预检、异常标记 <i>NO.5·17·18·19·24</i></li>
+          <li><b>语义检索与归因</b>：跨系统找料、大区涨跌根因、SKU 为什么掉了 <i>NO.8·16·18·24</i></li>
+          <li><b>初稿与内容生成</b>：报告、脚本、文案、月检表描述、设计初稿 <i>NO.4·5·13·15·21</i></li>
+          <li><b>经验萃取与陪练</b>：把老师傅的隐性判断问出来变成规则；新人 AI 陪练 <i>NO.1·14·18·19</i></li>
+          <li><b>调度与解释</b>：理解任务、调用专业算法、把结果翻译成人话 <i>NO.6·16</i></li>
+        </ul>
+      </div>
+      <div class="split-col">
+        <div class="split-h"><span class="sq" style="background:var(--gain)"></span><h3>交给系统</h3></div>
+        <div class="split-sub">确定性计算、流程流转、数据存储——要求可复现、可审计的部分</div>
+        <ul class="split-list">
+          <li><b>确定性代码</b>：NRV 能量计算、报价规则匹配，固化成脚本让模型只做解释 <i>NO.19</i></li>
+          <li><b>专业算法</b>：三维装载的高度图追踪＋贪心＋遗传算法（Python），大模型不参与计算 <i>NO.6</i></li>
+          <li><b>GIS 与规范引擎</b>：事实计算交给 GIS 工具，规范条文转成可执行规则引擎 <i>NO.4·21</i></li>
+          <li><b>业绩与提成</b>：交给 CRM 和 BI 算，AI 不碰——「FDE 真正重要的能力是知道哪里不应该使用 AI」 <i>NO.18</i></li>
+          <li><b>RPA 作为「手」</b>：自动开浏览器进集团网站建单填写提交 <i>NO.2·9</i></li>
+          <li><b>存储／权限／流转</b>：专业系统负责数据管理，包装管理系统沉淀历史样本 <i>NO.19·24</i></li>
+        </ul>
+      </div>
+      <div class="split-col">
+        <div class="split-h"><span class="sq" style="background:var(--stamp)"></span><h3>必须留给人</h3></div>
+        <div class="split-sub">担责、审美、例外处理、关系——AI 无法承担后果的部分</div>
+        <ul class="split-list">
+          <li><b>担责的决策</b>：涉法务财务责任 AI 不能承担，进工作流的 Agent 大多需人确认 <i>NO.14</i></li>
+          <li><b>最终审核权</b>：消防设计涉及验收责任，不接受「大概对」或黑箱 <i>NO.21</i></li>
+          <li><b>高价值关系</b>：几百万粉达人一句话说错的损失远超节省，沟通仍由人做 <i>NO.5</i></li>
+          <li><b>大客户定价</b>：价格不透明、金额大，老板亲自判断比做系统更靠谱 <i>NO.23</i></li>
+          <li><b>审美与表达</b>：包装是否正确表达了产品，判断留给人，AI 只提供上下文 <i>NO.19</i></li>
+          <li><b>尺度与例外</b>：AI 暴露了人工审核过去的「放宽」尺度，最终交由甲方决策 <i>NO.2</i></li>
+        </ul>
+      </div>
+    </div>
+    <div class="insight">
+      <div class="insight-mark">洞察 E</div>
+      <div>
+        <h3>「Human in the loop」不是安全声明，而是被工程化实现的具体机制</h3>
+        <p>多数案例没有停在口号，而是给出了可执行的设计：NO.17 设<b>人工校准回填机制</b>形成数据飞轮（AI 生成 → 人工校准 → 数据回填 → 下次更准），且只让人审模型把握不大的字段；NO.19 给每个模块结果<b>附带来源与置信度</b>，并设计降级与审计策略，让人接手时清楚「该信什么、该查什么」；NO.9 用<b>多 AI 角色互相监督</b>（执行判断／监督／发现风险），不确定项进风险监控；NO.21 做<b>分层设计</b>——常规空间一键生成降低门槛，专业用户开放参数调整入口。</p>
+        <p>与之配套的还有<b>回退机制</b>：NO.15 明确「某节点 AI 做不好就交还给人」，其方法习惯是「先假设 AI 能做，再用实测把做不好的部分逐渐交还给人」。这条边界不是事先画好的，而是在现场一次次试出来的。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 反模式 ===================== -->
+<section class="blk" id="antipattern">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no"><span>08</span> / 反模式 —— 24 个案例里反复出现的「先不要做什么」</div>
+      <h2 class="sec-title">九条禁忌：多数失败不是因为技术不行</h2>
+      <p class="sec-desc">比成功经验更有信息量的是失败教训。书中至少三个案例主动交代了<b>失败或近乎失败的项目</b>（NO.10 的电商比价与作业批改、NO.20 的金融营销图生成、NO.14 的第一版技术底座），NO.22 则坦承交付后失去数据权限、无法完成效果归因。以下九条是从这些教训里提炼的。</p>
+    </div>
+    <div class="anti" id="antiList"></div>
+    <div class="insight">
+      <div class="insight-mark">洞察 F</div>
+      <div>
+        <h3>最贵的一种失败：所有人都「完成」了，但企业什么都没变</h3>
+        <p>NO.20 记录了一个极具代表性的反面案例：某金融机构业务部门嫌设计师做营销图慢，想用 AI 提效；因合规不能用外部模型只能本地部署；结果花不少钱搭了 AI 图片生成系统，<b>生成的图实际不能用</b>——IT 完成了「AI 转型」，合规完成了数据安全，领导可以说企业完成了 AI 转型，但业务部门还是回去找设计师。「从企业经营的角度看，什么都没有改变。」</p>
+        <p>NO.14 的第一版走的是同一条路：以技术人员为主搭好知识库＋模型＋Agent 接入既有系统，<b>系统有了，但员工没用起来、业务没变</b>。转向之后的关键动作有两个：引入「知识萃取师」角色让业务人员自己讲怎么做／为什么／哪些例外／何时必须人工；以及发现骨干连提示词是什么都不知道之后补上 AI 通识培训，把项目从「IT 牵头的技术项目」变成「IT ＋ 人事双牵头的组织转型项目」。</p>
+        <p>判断标准因此变得很朴素。NO.8：<b>只看「是否少买错、少重复购买」，模型准确率和搜索速度只是过程指标</b>。NO.18：「被 AI 释放出来的时间，有没有重新变成企业的生产力」。NO.24：「评判一个 FDE 项目，不看 demo 多炫，看客户有没有真的改变决策方式」。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 金句墙 ===================== -->
+<section class="blk" id="quotes">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no"><span>09</span> / 金句墙 —— 受访者原话</div>
+      <h2 class="sec-title">35 句最值得抄下来的话</h2>
+      <p class="sec-desc">这些句子来自访谈原文，未经改写。它们大致分三类：<strong>关于从哪里开始（找问题不是找场景）、关于怎么落地（进流程不是做 Demo）、关于 FDE 是什么（翻译官、辅导师、HRBP＋架构师）</strong>。</p>
+    </div>
+    <div class="quotes" id="quotesGrid"></div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-note">
+        <p><b>关于本报告</b></p>
+        <p style="margin-top:8px">本报告基于《Datawhale FDE 案例 100》（246 页，2026 年 9 月 6 日）全文提取与逐案例精读整理而成。原书收录 24 个 FDE 落地案例的深度访谈，按受访者名字首字母排序，统一使用 Q1–Q6 六问框架。本报告对其做了跨案例的结构化归纳：场景原型抽象、行业与地理分布统计、技术栈与挑战类型频次、方法论链路收敛、人机分工边界梳理、量化效果对比与反模式提炼。</p>
+        <p style="margin-top:10px">原书前言致谢「得到 AI 学习圈」在呈现形式上给的启发。书中署名的贡献者包括：艾丽丝、黄子育、苏鹏、周理璇、吴博文、王嘉鹏、王凯立、胡博毓、林真宇、康楚瑶、王毅成、居丽德孜、谢尧、孙斌、张鼎伦。</p>
+        <p style="margin-top:10px;color:var(--fg-3)">所有数字、引述与判断均出自原书受访者自述，本报告未做外部核实。部分案例的量化数据已由受访者脱敏处理。</p>
+      </div>
+      <div class="foot-meta">
+        <div>SOURCE <span>Datawhale FDE 案例 100</span></div>
+        <div>PAGES <span>246</span></div>
+        <div>CASES <span>24</span></div>
+        <div>FRAMEWORK <span>Q1 – Q6</span></div>
+        <div>ARCHETYPES <span>8</span></div>
+        <div>INDUSTRIES <span>12</span></div>
+        <div>QUANTIFIED <span>16 / 24</span></div>
+        <div>BUILT <span>2026-09-17</span></div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============ 数据层 ============ */
+const INDUSTRIES = [
+  {k:'制造工业', n:'制造 / 工业', c:5},
+  {k:'电商零售消费', n:'电商 / 零售 / 消费', c:8},
+  {k:'政务公共', n:'政务 / 公共', c:2},
+  {k:'法律服务', n:'法律服务', c:1},
+  {k:'金融', n:'金融', c:1},
+  {k:'电信', n:'电信', c:1},
+  {k:'建筑', n:'建筑工程', c:1},
+  {k:'外贸', n:'外贸 / 跨境贸易', c:1},
+  {k:'传统服务', n:'消防维保', c:1},
+  {k:'生物科技', n:'生物科技销售', c:1},
+  {k:'工程租赁', n:'工程租赁', c:1},
+  {k:'财务共享', n:'央国企财务', c:1}
+];
+const ARCHETYPES = [
+  {k:'隐性经验', n:'隐性经验沉淀', d:'老师傅／骨干脑中的判断变成组织资产'},
+  {k:'文档图像', n:'非结构化文档图像', d:'票据、图纸、卷宗、照片读成字段'},
+  {k:'数据打通', n:'跨系统数据打通', d:'把散落各处的数据串成一条业务链'},
+  {k:'内容生成', n:'报告与内容生成', d:'报告、脚本、文案、素材的规模化生产'},
+  {k:'经营分析', n:'经营分析与决策', d:'从「有数据」到「看清经营」'},
+  {k:'报价定价', n:'报价与定价', d:'多因素成本核算与价格判断'},
+  {k:'审核合规', n:'审核与合规前置', d:'把检查规则前置到提交环节'},
+  {k:'组织转型', n:'组织与能力转型', d:'让员工与企业自己长出 AI 能力'}
+];
+const CASES = [
+{no:1,title:'制造业经验传承',ind:'制造工业',geo:'德国 · 斯图加特',arch:['隐性经验','内容生成'],
+ pain:'70–80 人的零部件厂，核心工艺知识只存在于老师傅脑中。老师傅临近退休、也无暇带教，新人培养周期长达 2–3 个月以上，经验一旦流失无法补回。',
+ before:'靠师徒制口传心授。没有系统化文档，培训进度不可追踪，师傅同时被生产和带教两头牵扯。',
+ ai:'先跟岗走完整流程，画出知识地图，再做文档解析＋RAG；关键一步是接入客户已有的培训平台，做成打卡式课程，每课配问答、进度可视化。全程约半年，实际投入约 4 个月，其中陪跑近 2 个月。',
+ div:{ai:['文档解析、知识检索、每课问答'],sys:['客户原有培训平台承载课程与打卡进度'],hu:['师傅转向盯进度与处理复杂问题']},
+ gain:['<b>≈95%</b> 文档解析准确率','<b>80%+</b> 召回片段准确率','调研收集的高频问题<b>直接变成测试集</b>','知识系统化沉淀，培训全程可追踪'],
+ risk:'用户说不清自己的需求和经验；验收标准不能由 FDE 闭门定义；技术跑通了但员工不愿用——最终选择复用客户已有技术栈来降低抵触。',
+ quote:'不要从「企业想做什么 AI」开始，要从「企业每天到底怎么工作」开始。'},
+{no:2,title:'车管所网办材料审核',ind:'政务公共',geo:'浙江 · 政务',arch:['文档图像','审核合规'],
+ pain:'群众上传的图像材料需人工逐张审核，单件约 15 分钟，特征就是「慢、累、量上不去」，驻点快递企业承压。项目入口其实是一个烂摊子——原承建商倒闭，遗留 .NET＋安卓＋Web 系统无人维护。',
+ before:'纯人工逐张看图审核，标准靠经验，尺度事实上被放宽过；系统由已倒闭的承建商留下，无人能改。',
+ ai:'把审核动作拆成「看、读、填、搬」四件事：机器视觉＋OCR 负责看，大模型负责抽取，RPA 负责搬运到公安部业务系统。9 类图像材料分别采集标注训练，识别率从 70% 多迭代到约 98%，历时约半年。为拿下项目，先自行承担售前成本做了小场景验证再立项。',
+ div:{ai:['图像识别、信息抽取、要素校验'],sys:['RPA 自动搬运到公安部业务系统'],hu:['存疑件人工复核；审核尺度由甲方决策']},
+ gain:['单件审核 <b>15 分钟 → 3–5 分钟</b>','日均办件 <b>700–800 → ≈1100 件</b>','人员未增反减','识别率 <b>70%+ → ≈98%</b>','后续与甲方共建 AI 创新实验室'],
+ risk:'数据极不标准：有人只拍国徽、各金融机构合同版本不同、复印件再拍照；AI 上线后暴露了人工审核过去事实上「放宽」的尺度，这个决策权只能交回甲方；最难的是组织协同与「算利益账」。',
+ quote:'最难的是组织和规则，算法反而排在后面。FDE 首先应更像一个顾问，其次才是开发工程师。'},
+{no:3,title:'诉讼律师卷宗梳理',ind:'法律服务',geo:'国内 · 商事诉讼',arch:['文档图像','内容生成','隐性经验'],
+ pain:'上千页材料整理需 3–5 个工作日；十几个当事人的关系梳理要 2–3 天；口语表达转成法律要件的门槛极高，新老律师效率相差 3–5 倍；诉讼周期数月到一年，需要持续维护对案件的认知。',
+ before:'北大法宝、威科先行等专业库只解决「查」和「生成」的单点问题，律师要在 5–6 个系统间来回切换，上下文完全割裂。',
+ ai:'从早 9 点开始现场旁听案件讨论会，抽出 7 个标准模块。大模型负责 NLU、摘要与初步推理，专业系统负责案件知识图谱、法条结构化检索、判例精确匹配，通过统一「案件工作空间」整合。把「请求权基础分析三层四步法」和证据链规则转成流程节点。最关键的改动是交互形态：从对话框改为案件工作台——先建案，再交互。',
+ div:{ai:['材料理解、摘要、关系梳理、初步推理'],sys:['案件知识图谱、法条检索、判例匹配'],hu:['律师做法律判断与策略决策']},
+ gain:['14 名被告的案件关系梳理 <b>2–3 天 → 一晚</b>','100 万字材料距开庭 3 天，<b>1 天完成梳理</b>','材料整理效率 <b>提升约 70%</b>','上线两月用户遍布全国多城'],
+ risk:'隐性经验难以结构化；产品形态如何定义（对话框 vs 工作台）；用户习惯难改——律师第一反应是先找输入框。',
+ quote:'AI 只是手段，改变工作方式才是目的。FDE 不能每接一个项目就重新定制一次。'},
+{no:4,title:'城市规划研判',ind:'政务公共',geo:'国内 · 规划设计院',arch:['经营分析','内容生成','组织转型'],
+ pain:'难点是同时连接业务、数据、空间、工具四件事，外加第五件——人。领导一句「识别某区域潜力用地」，下面要查资料、调数据、跑工具、开多轮会。单项分析约 1 小时，跨部门报告 3–5 天甚至近一周。院里约 10 个部门各有工具与数据，谁也不肯交。',
+ before:'各部门用各自的 GIS 工具与经验，人工查资料、跑分析、写报告，跨部门协作靠开会。',
+ ai:'先把自己逼成「半个规划师」，再主动收敛范围：全市 → 一个区 → 米市巷单元 → 两条业务流。搭三个底座：真实数据＋专业计算、规划规则 RAG、通用报告模板。核心设计是让 AI 当调度者而非执行者——模型负责理解与编排，GIS 工具负责事实计算，人负责决策。高频且规则明确的固化为工作流，长尾开放的交给 Agent。交互以地图为中心：左侧筛选与工具、中间地图、右侧 Copilot，结果回显到地图上。',
+ div:{ai:['理解意图、调度工具、生成报告'],sys:['GIS 负责事实计算；部分流程本地 Qwen7b，复杂推理走云端'],hu:['规划师做判断与决策']},
+ gain:['跨部门报告 <b>3–5 天 → 10–20 分钟</b>','单部门分析 <b>1 小时 → 5–10 分钟</b>','10 个部门 <b>20–30 名专员</b>在使用','AI 反向提示新分析因子：停车场闸机频率、房屋空置率、人口画像','部门开始<b>自己沉淀 Skill</b>'],
+ risk:'部门不愿交出数据和规则——解法是找「执行一号位」、方案留容错、坚持「一文、一图、一表」必出；模型能力与数据安全冲突——采用混合部署；客户想要的「一句话出报告」「多智能体博弈」并非最优解，部分最优解问题用传统优化算法反而更精准。',
+ quote:'FDE 要像「竹子」一样扎进去。好的 FDE 项目，是交付结束以后客户自己开始长出 AI 能力。硬编码能解决，就可以硬编码。'},
+{no:5,title:'TikTok 达人建联履约',ind:'电商零售消费',geo:'跨境 · TikTok 海外',arch:['数据打通','内容生成','经营分析'],
+ pain:'客户初始需求极其宽泛——「团队怎么用 AI 赋能」。拆开后是四个环节的痛：找人难如大海捞针；上万商品与达人标签匹配难；履约周期约 1 个月，运营大量时间花在「催」上；数据分散在 TikTok、Excel、财务各自维护，老板看不清达人到 GMV 的全链路。',
+ before:'运营手工筛达人、手工发消息、用 Excel 追履约状态，各系统数据互不相通。',
+ ai:'先画全链路流程图，再逐环节定人机分工：AI 筛达人给 BD 精准名单（发消息沟通保留人工）；商品卖点 × 达人内容属性做匹配（AI 先筛人再判断）；达人特点＋商品卖点＋爆款参考生成可选拍摄脚本——这是个「利他能力」，接受度最高；履约状态自动提醒，无动作才转人工；最后统一出「达人—履约—GMV」的业务视角。',
+ div:{ai:['达人筛选、标签匹配、脚本生成、状态提醒'],sys:['统一业务视角看板'],hu:['BD 负责实际沟通与关系；高价值达人决策不交 AI']},
+ gain:['平均履约周期 <b>≈1 个月 → ≈18 天</b>','管理者<b>首次看清</b>达人到 GMV 的完整漏斗','垂直深耕成本递减：<b>100% → 80% → 60%</b>'],
+ risk:'跨境数据权限与合规——光数据就花了近一个月，核心问题是数据能否离境；哪些环节不能交给 AI（几百万粉达人一句话说错的损失远超节省）；内部人怕被替代，需要上中下三层同时沟通。',
+ quote:'以前团队是在管理一堆表格，现在是在管理一条业务链路。FDE 真正难的地方，往往不是模型。'},
+{no:6,title:'跨境物流货车装载',ind:'制造工业',geo:'黑河 · 中俄公路运输',arch:['报价定价','数据打通'],
+ pain:'一条硬经济线：约 110 方的货车，人工装 5 小时只能装到 95–98 方，而 98 方就是保本线，每超 1 方增收 100 美元。俄方给的是外部尺寸，实际可用空间少 5–8%，利用率仅 60–65%。最关键的矛盾是——算得出最优解，现场却执行不了。',
+ before:'老师傅凭经验装车，5 小时装到 95–98 方；理论最优解无法落地到工人手上。',
+ ai:'分工极其明确：大模型负责理解任务、解析参数、调用算法、解释结果；三维计算全部交给 Python 专业算法（高度图 3D 空间追踪、贪心放置、多策略排序、遗传算法）。放弃了三维可视化，改为工人能直接看懂的装车指导图——货物编号、摆放方向、截面示意、装载顺序，并发明「截面法」让工人站在车门口就能操作。数据采集用 iPad Pro LiDAR＋激光测距，硬件成本约 8500 元。',
+ div:{ai:['任务理解、参数解析、算法调用、结果解释'],sys:['Python 三维装载算法负责全部计算'],hu:['工人按指导图执行装载']},
+ gain:['实测稳定 <b>≈99 方</b>（内净约 108 方，16.4×2.47×2.67m，11 种规格电动车）','装载时间 <b>5 小时 → 约 2 小时（提升约 100%）</b>','三层收益叠加，<b>工人／物流公司／货主三方共赢</b>','硬件投入仅约 <b>8500 元</b>'],
+ risk:'现场可执行性远比算法难——最优解如果工人装不出来就等于没有；数据采集要在真实货车环境下完成。',
+ quote:'AI 落地要算清「经济账」。好的 AI 落地不是零和博弈，而是做增量。未来真正有价值的 AI，一定长在企业的真实流程里，而不是停在 Demo 上。'},
+{no:7,title:'基金公司研发转型',ind:'金融',geo:'国内 · 基金公司',arch:['组织转型','隐性经验'],
+ pain:'员工已经在用 Codex、Claude Code，但「大家都会用，企业很难让大家一起用」。问题分三层：认知未统一、工具方法未统一、组织方式待变。最具体的一道坎是——PRD 从飞书文档转成 Markdown/TXT 之后，十几份文档怎么拆、角色边界怎么划、并发冲突怎么处理。',
+ before:'各人用各人的工具和提示词，能力停留在个人层面，无法在组织内复用。',
+ ai:'交付形式是五天半的线下培训，共三期。分角色摸需求（老板／研发／产品经理／HR 各不同），把培训做成一条完整的业务故事线，并从 0 到 1 整理出一套 Spec 文档——客户一度误以为这是阿里内部早已提炼好的方法论。现场随反馈实时调整。',
+ div:{ai:['代码生成、文档生成、测试辅助'],sys:['Spec 文档、统一工具链、任务拆解规范'],hu:['各角色按统一方法协作；老板定方向']},
+ gain:['从<b>个人能力 → 组织共同方法</b>','另一制造业客户短期统计：写代码时间省 <b>≈1/3</b>、写文档省 <b>一半多</b>、测试基本持平','明确声明这只是几天短期数据，<b>不作长期 ROI 结论</b>'],
+ risk:'行业标准未跟上——只能暴露不确定性＋小步验证；前期调研失真，以为客户水平很高，实际基础问题都没解决，只能现场降级；企业一上来就想大投入（买一体机、微调、推翻工作流）——正确顺序是投入由轻到重，先用 API/SaaS/Agent 验证。',
+ quote:'FDE 更像一个「翻译官」，把 AI 的能力翻译成企业真正能用、能跑、能沉淀的工作方式。'},
+{no:8,title:'工业企业采购浪费',ind:'制造工业',geo:'海外 · 工业客户',arch:['数据打通','经营分析'],
+ pain:'15 个团队与同一套 ERP 交互，所有部门都在抱怨「ERP 不好用」。真正的入口是一句话：「我明明知道这个部件数据库里有，我上次还用过，但现在就是找不到。」顺着它追下去是一条完整的根因链：搜索困难 → 重复录入 → 数据污染 → 错误或重复采购 → 库存积压 → 报废 → 真实财务损失。',
+ before:'靠人记忆和翻记录找物料，找不到就重新采购；ERP 数据被重复录入持续污染。',
+ ai:'数月访谈＋坐在员工旁边看操作。梳理出约 15 个功能点，召集所有利益相关方逐项确认，并让业务部门投票排序。FDE 内部另用 7–8 个维度评估用例：数据能否拿到、处理后能否写回业务系统、AI 能否解决、技术难度、业务是否愿意采用。落地动作其实很朴素——数据清洗标准化＋语义检索。从两周左右能见效的场景开始。',
+ div:{ai:['语义检索、跨系统找料'],sys:['ERP 数据清洗标准化、写回业务系统'],hu:['业务部门投票定优先级；业务人员确认价值']},
+ gain:['效果只看一件事：<b>是否少买错、少重复购买</b>','模型准确率与搜索速度被明确定义为<b>过程指标</b>','用历史数据建基线 → 小规模实验 → 逐步扩大','<b>价值必须由客户业务人员确认</b>'],
+ risk:'找真问题耗时长，与客户「要快」的期待冲突；跨部门冲突不会在会上说，需要多轮＋单独沟通；技术能做但落地难——数据拿不出来、老 ERP 不让写回、部门不让碰系统、用户不信 AI。',
+ quote:'不要拿着 AI 去找问题。把 ROI 定义放在项目开始。先标准化的应该是方法，产品可以先放一放。'},
+{no:9,title:'央国企财务报销',ind:'财务共享',geo:'国内 · 央企科研机构',arch:['数据打通','审核合规'],
+ pain:'报销真正耗时的不是填表，而是填表前的判断过程：这笔费用是什么性质、归属哪个项目、要关联哪张出差申请、走哪条审批、算哪个部门。科目复杂、层级极深。结果是科研人员甚至博士被报销消耗——典型的价值错配。',
+ before:'员工自己查规则、找关联单据、手工填报，周期半个月到一个月。',
+ ai:'员工在钉钉对机器人说「我要报销」并发发票 → AI 识别 → 关联业务信息 → 按财务规则判断 → 多个 AI 角色互相监督（一个执行判断、一个监督、一个发现风险，不确定的进风险监控）→ RPA 作为「手」自动打开浏览器进集团网站建单、填写、提交。整条链路是：业务信息获取 → AI 判断 → AI 监督 → 风险识别 → RPA 执行。策略上先做「破冰项目」，摘最近最甜的桃子。',
+ div:{ai:['票据识别、规则判断、多角色互相监督、风险识别'],sys:['RPA 自动建单填写提交；私有化部署保数据不出域'],hu:['不确定项与风险项由人最终确认']},
+ gain:['报销周期 <b>半个月–1 个月 → 1–2 天</b>','累计落地 <b>10 个 AI 应用场景</b>','采购 AI 算力一体机投入 <b>两百多万元</b>，实现数据不出域'],
+ risk:'业务部门接受度——反对「AI 组自己设计好再让业务用」，改为业务全程陪跑，不大刀阔斧改流程；数据安全与基础设施投入大，但不能一上来就要甲方花两三百万；不同场景不能强行套同一个模型，要「因材施教」。',
+ quote:'单纯从技术上已经能落地，其实已经成功了 80%，真正容易让项目「死掉」的，是业务、人和组织。'},
+{no:10,title:'线下零售门店对账',ind:'电商零售消费',geo:'国内 · 年营收几十亿',arch:['文档图像','经营分析','数据打通'],
+ pain:'门店开在百货和综合体里，门店收银数据要和商场结算数据逐周期核对纸质单据与扫描件，一次要 1–2 个人天。问题有三层：业务层面是漏收钱；流程层面是店员店长还背着销售指标；信息层面是两边数据从未打通。总部甚至设过「容忍区间」，差异在区间内就不再追查。',
+ before:'人工逐张核对纸质单据和扫描件，成本高到总部主动放弃追查，用容忍区间掩盖问题。',
+ ai:'当时手上有多个需求（自动化客服、竞品对比等），最终选对账，理由是价值最直接、可计算。方案是 OCR＋视觉识别比对＋自动化工作流按周期定时运行，AI 做第一轮核对，人只看差异项。分两阶段实施：第一阶段用 Cherry Studio＋本地电脑即可跑通，第二阶段才加后端数据与冗余。关键原则是不给一线增加额外负担。',
+ div:{ai:['票据识别、数据比对、差异标记'],sys:['定时工作流自动跑批、后端数据与冗余'],hu:['人只看差异项并追因']},
+ gain:['<b>1–2 个人天 → 几小时</b>','实测门店差异 <b>1–2 个百分点</b>，部分 <b>2–3 个百分点</b>（对纯利是很大的数字）','价值本质是<b>让企业重新做回过去因成本太高而放弃的事</b>'],
+ risk:'两个失败教训：①国内电商横向比价——平台风控与反风控博弈，交付周期被拉长、场景被迫缩小，「如果一个行业里已有公司专门靠某个问题生存，先认真研究它」；②学校批改作业＋智能推题——准确率、时效、科目、频率、题库结构化程度、推题规则、错题后该降难度还是加难、人工介入点全都没问清，导致不断返工，而 AI 时代的返工还表现为 Token 消耗。根因是高估 AI、低估行业难度，需求调研不深，组织与责任边界未提前对齐。',
+ quote:'第一单一定要选对——世上没有「六边形完美任务」。Day One 就要想清楚交付边界。不要把 AI 落地简单理解成「替代人」。这是 FDE 最基本的「商业 101」。'},
+{no:11,title:'外贸企业资料资产化',ind:'外贸',geo:'国内 · 外贸礼品',arch:['数据打通','文档图像','组织转型'],
+ pain:'年销几亿的外贸礼品企业（起瓶器等），团队只有十几人。样图、美工图、参考图、交付图、模板散落在多台电脑的多个文件夹里，而且大量是图片格式。老板的需求很朴素：「我说一句话，AI 就把某个客户之前用过的模板找出来。」深层是三个问题：数字资产未组织化、缺少 AI 可运行的环境、以及信任。',
+ before:'靠人记忆和翻文件夹找资料；资料不能外带；网络环境乱且不稳。',
+ ai:'转折事件来自一个具体难题：客户拿到一款类似三角尺的产品，带一排不规则刻度，找过美工、做过 3D 打样都没搞清，准备人工照抄又抄不准。FDE 把照片丢给 AI，约 10 分钟就找到该产品并搞清那些刻度其实是角度——老板原以为要 1–2 天，随后当场做出了老板认为很难的矢量图。此后分四步：①先当「网络工程师」，重整 4 台路由器＋2 台光猫＋1 台交换机＋1 软路由；②重整文件并建立文件间关系；③资料不能外带，于是把 Harness 整理成任务包（框架／原则／规范／Demo）部署到客户自己的 Codex，由本地 Codex 在客户环境内开发，前期投入几十小时做框架、客户侧跑约 40 小时，测试日志由客户侧 AI 整理回传再迭代规范；④沉淀为企业自身能力（文档化＋工作流＋Skill＋Agent）。另自研远程通道让己方 AI 后台连接客户电脑上的 AI，长任务放在夜里跑。',
+ div:{ai:['图像理解、检索、本地 Codex 开发、日志整理'],sys:['重整后的文件体系、Harness 任务包、远程通道'],hu:['老板与员工配合测试、确认资料权限边界']},
+ gain:['一个卡住美工和 3D 打样的难题，<b>约 10 分钟解决</b>（原预估 1–2 天）','仍处第一阶段，<b>诚实表示难以给出百分比</b>','三个真实变化：企业开始理解 AI 能做什么；信任建立后<b>主动释放十几到二十个新需求</b>；老板从「买工具」转向「重新思考公司怎么工作」'],
+ risk:'现场环境不一致——本地正常、客户机报错，安装包来回返工；数据与隐私极敏感，合同和客户资料是核心资产，甚至不给员工看；老板与员工的时间难以配合。',
+ quote:'FDE 不能把自己理解成一个「AI 外包」。FDE 要接受一个事实：大量工作并不「AI」——修网络、配 Windows 环境、理文件命名、设权限、等老板、催测试。最理想的 FDE，是让客户越来越独立。'},
+{no:12,title:'鞋服电商素材工作流',ind:'电商零售消费',geo:'国内 · 淘天头部',arch:['内容生成','隐性经验','组织转型'],
+ pain:'自有工厂＋设计师，年流水约 10 亿。SKU 多、上新快，每个新品都需要主图、详情页、挂车视频，长期只能靠养一支大团队。四个问题：人力成本高；「人盯着 AI 做图」并没有发生质变；品控依赖少数高手；内容散落在个人电脑里，不成公司资产，人一走就断。',
+ before:'大团队人工作业，AI 只做零散出图，仍需人全程盯着；产出留在个人电脑，品控靠少数高手的经验。',
+ ai:'先到现场识别关键干系人——老板看战略、管理者看成本效率、基层怕加活怕被裁。破冰动作是先解决员工眼前的小麻烦（提示词太长、生成图带水印需要再处理）。节奏定为：调研 → Demo → 使用 → 反馈 → 再迭代，并把反馈沉淀进文档，让客户在指定位置持续填写。然后重搭工作流，把图片和视频沉淀为公司级素材资产、商品统一管理。最关键的一步是把「好看」变成「能商用」——一致性三层（人物／服饰／场景）被写进验收标准，AI 先做第一道检查，再人工确认。POC 阶段就推动内部员工真用起来。',
+ div:{ai:['素材规模化生成、一致性第一道检查'],sys:['公司级素材资产库、商品统一管理、反馈文档'],hu:['人做最后的业务判断与商用放行']},
+ gain:['仍处 POC／试用／迭代阶段，<b>未给出量化数字</b>','三个变化：员工真的用起来了；内容从个人产出变成<b>企业资产</b>；AI 生产有了明确的<b>质量边界</b>'],
+ risk:'客户认知两极——一边是「现在挺好为什么折腾」，一边是「花 10 万要出 100 万效果」；基层员工拿到的需求可能本身就是假的；AI 的不确定性——「看起来很好，但商品不对」，越漂亮风险越大。',
+ quote:'AI 负责规模化，人负责最后的业务判断。FDE 有「两条飞轮」：外部是对产业的理解，内部是方法、组件与经验的复用。'}
+];
+CASES.push(
+{no:13,title:'消防维保数字化',ind:'传统服务',geo:'国内 · 消防维保',arch:['数据打通','组织转型','内容生成'],
+ pain:'双重视角的痛。老板「看不见」：哪些项目维保到位、哪些客户有消防风险未处置、影响回款的记录可能因人员变动而遗失——汇报与现场永远隔着一层信息差。一线则被表格困住：核心工作本是检查维修，却要填纸质表格、整理 Excel、打印传递归档、反复沟通，一个表格能占掉半天。数据彻底割裂：检查记录在纸质表、维修记录在 Excel、客户信息在某人微信、设备档案散落在文件夹里。',
+ before:'纸质表格＋Excel＋微信；去年引入过一个监控平台，但只覆盖很小一块。',
+ ai:'逐一沟通维保、人事、行政、财务并现场观察，过程中发现原方案存在方向性错误：企业已部署政府监管要求的软件流程且无法开放接口，再建一个完整平台等于让员工在两套系统里重复操作。于是改为在已有流程上做最轻量改造。分两阶段：先把纸质与 Excel 迁到线上完成流程数字化，再在数字化后的流程里找 AI 适合介入的点，例如月检表中重复的问题描述由 AI 辅助生成并调用历史记录。分工是：系统管流程记录与数据沉淀、AI 处理复杂信息与生成、人做消防专业判断。',
+ div:{ai:['复杂信息处理、月检表描述生成、历史记录调用'],sys:['流程记录与数据沉淀；拥抱飞书等已有工具'],hu:['消防专业判断由人做']},
+ gain:['仍在推进中，<b>无大规模量化指标</b>','三层变化：管理方式、员工工作方式、能力沉淀','额外<b>叫停一笔约 10 万元的外部系统采购</b>——对方方案未考虑监管流程与实际执行，上线也无法用'],
+ risk:'需求真实性难辨——外勤人员很少回公司，在会议室面对老板有压力，只会被动回答，必须走进日常场景由流程反推痛点；基层接受度低，怕更严管控、怕被记录、怕学新系统，要同时兼顾老板的数据透明与员工的减负；避免过度建设，用小模块小功能迭代。',
+ quote:'先问「哪里存在真实的业务成本」，再考虑「这里是否需要用 AI」。'},
+{no:14,title:'国企工作流程落地',ind:'电商零售消费',geo:'国内 · 省属国企',arch:['组织转型','隐性经验','审核合规'],
+ pain:'省属国企一级子公司，做服装、美妆、3C 等十多条电商线，已有 OA、ERP、数据中台。表层需求是「能不能再往 AI 走一步」，真实问题有三：业务在增长但编制受限，且懂电商的人才不愿进国企；合规压力大，法务只有 2 人却要面对多业务线的大量合同；大量依赖个人经验的工作能否变成可复用的能力。',
+ before:'传统软件交付依赖「几十年最佳实践」，但这家企业的知识从未被沉淀——法务只留下改后的合同，为什么改、哪些条款关键全在脑子里。流程被视为理所当然，没人写下来，AI 只能自己「生成」。',
+ ai:'起初按传统思路以技术人员为主搭技术底座（知识库＋模型＋Agent 接入既有系统），结果系统有了但员工没用起来、业务没变。转向五步：①先判断场景值不值得做（价值 × 可行性，避免做出没人用的玩具）；②引入「知识萃取师」角色——不同于传统咨询的模板套用，而是让业务人员自己讲怎么做、为什么、有哪些例外、何时必须人工；③把隐性知识与流程变成 AI 可理解之物（通用 LLM 本质是概率生成，是幻觉来源，对 A 公司正确的不代表对 B 公司正确，所以「先梳理流程，再做 Agent」）；④让员工真正学会用 AI——发现骨干连提示词是什么都不知道，于是补上 AI 通识培训，项目从「IT 牵头的技术项目」变成「IT＋人事双牵头的组织转型项目」；⑤让 AI 成为员工的助手，从不强调替代，涉法务财务责任的 AI 不能承担，进工作流的 Agent 大多需人确认。',
+ div:{ai:['合同第一轮筛查、库存查询、提醒通知'],sys:['数据中台的 MCP 能力、知识库、既有 OA/ERP'],hu:['法务做最终判断；业务人员自己用提示词搭 Agent']},
+ gain:['法务场景 AI 先做一轮筛查挑出重点，<b>省下一个法务编制 ≈ 一人年综合成本</b>','标志性小事：办公用品自助柜补货 Agent 是<b>负责行政物品的同事自己用提示词做的</b>——员工在 IM 问「我今天要领两节电池还有没有」，查库存、不足则提醒行政补货、补货后通知员工','业务价值不大，但意义在于「以前要找 IT 提需求、排期、开发、内部结算工时，现在他自己想『这个问题我能不能用 AI 解决』」'],
+ risk:'业务人员不愿把知识变成组织资产——从「替代」切到「助手」，还要人事制度和激励跟上；技术部门牵头不一定最好，第二年改由人事牵头从培训重推；数据没想象中完整，有 ERP 有中台不等于准备好 AI，新业务、内控、人工环节的数据可能根本不存在，为此自建了一套企业 AI 成熟度模型。',
+ quote:'难度排序是：人最难，其次是组织，再是数据，最后才是技术。中大型企业的 AI 落地一定是一号位工程。'},
+{no:15,title:'本地生活短视频内容',ind:'电商零售消费',geo:'国内 · 抖音代运营',arch:['内容生成','隐性经验'],
+ pain:'抖音本地生活代运营，客户以餐饮商户为主，覆盖多城市。高峰期一天需要两三百条文案。问题不是不会写，而是难规模化复制；本地生活内容商户差异极大——高端酒店、连锁品牌、街边小店，菜品、活动、老板表达、客群各不相同，通用模型按固定模板很难照顾。此前直接让 AI 写、本地部署 DeepSeek，均未达预期，「AI 味」很大程度上就来自「固定范式」。',
+ before:'靠会写的人手工产出，高峰期堆人力；曾试过直接让 AI 写和本地部署模型，都不达标。',
+ ai:'方法习惯是：先假设 AI 能做，再用实测把做不好的部分逐渐交还给人；并把客户原有的结果与 AI 做的小 Demo 并列比较。五阶段推进：①看懂业务——现场观察谁负责什么、新客户怎么起步、怎么判断文案好坏；②把经验拆成 AI 可理解的业务字段（客户是谁、门店类型、主推菜品、活动、卖点、内容方向），并融入优秀文案人的写法与参考案例；③从「AI 写手」升级为一条生产流程（提示词＋Skill＋业务参数＋校验／审计等 Loop 机制）；④AI 先跑、人负责判断，并设回退机制——某节点 AI 做不好就交还给人；⑤用真实反馈持续调优，按周期给不同版本结合平台数据，「味道不对」、某时段留存下滑、某些客户或 SKU 不稳，就调提示词、逻辑顺序、关注点甚至模型选型。',
+ div:{ai:['按业务字段批量生成文案、多版本产出'],sys:['提示词＋Skill＋业务参数＋校验审计 Loop'],hu:['人判断「味道对不对」；做不好的节点回退给人']},
+ gain:['效率提高、质量<b>平均水平</b>提高','工作方式变化：新客户进来先规划好门店／菜品／活动参数，由系统持续生成，把原本堆在某一天的人力需求提前消化，实现<b>「削峰填谷」</b>','交付时预留迭代空间，客户可按 SOP 自行优化'],
+ risk:'难点在文案之外——人物怎么讲、情绪、画面、节奏，客户说「不对」却说不出哪里不对；不同客户与 SKU 下的稳定性；让员工学会与 AI 协作，把主观反馈转成系统可吸收的输入。',
+ quote:'我默认电脑、手机上能够规模化完成的事情，都值得先尝试 AI。FDE 是「AI 应用辅导师」。'},
+{no:16,title:'电信网络数据分析',ind:'电信',geo:'美国 · 前三大运营商',arch:['经营分析','数据打通'],
+ pain:'典型问题是「现在到底哪个基站坏了？为什么坏？影响多大？」。痛点有三：分析高度依赖人工，而问题永远在变化，一个新需求需要 1–3 人讨论并写 SQL；SQL 动辄上百行且易错，项目中就发现过看似正确、实际取错数据的情况；传统仪表盘只能回答预定义的问题，而现实是不断追问——「那如果我把这批人筛出来呢」。客户此前自建过 Agent，只靠一句提示词「你现在是一个数据分析师…」，效果不佳。',
+ before:'人工讨论＋手写上百行 SQL；传统 BI 仪表盘只能答预先定义好的问题。',
+ ai:'核心立场是「能跑起来」不等于「可以生产使用」，并明确拒绝「大模型本来就不确定所以答案不一样很正常」的说辞——老板问两遍「哪个班成绩最好」，在数据未变时应当得到同一个答案。做法：先搞清三个问题（客户到底要什么输入、最后需要什么输出、中间到底发生了什么）；把原有分析流程拆成细组件再重组；把 Agent 定位成可反复运行的业务系统，而不是「会聊天的分析师」；保证可扩展——几十到上百分析师不可能各装一套，因此云端统一控制与监督使用，用户产生的数据与经验反哺系统（含记忆、语义层）；不改变原有习惯，在网页、Teams、Slack 等既有框架内调用，最终仍以聊天方式使用。',
+ div:{ai:['理解追问、生成并执行分析、给出可复核结果'],sys:['云端统一控制、记忆与语义层、既有 Teams/Slack 入口'],hu:['分析师站在 AI 结果上做质量确认与继续判断']},
+ gain:['分析周期 <b>按天计算 → 分钟到小时级</b>跑完，再由人工做质量确认','交互模式改变：从「提前定义问题给答案」变成<b>「围绕数据继续追问」</b>','分析师的工作重心上移到判断'],
+ risk:'稳定性与准确性；成本不只是调用费——不会做的人调试可能花掉几千美元，有经验的人十几二十美元就够，架构不好就像「一辆漏油的车」；对客户业务的理解不足会导致方向从一开始就错。',
+ quote:'就像汽油本身不稳定，但汽车工程的意义，就是让汽油可以安全、稳定地驱动车辆。如果你只知道自行车，看到很远的地方就只能骑自行车过去。不要把「能跑」当成「能落地」，也不要迷信 FDE 这个名词。'},
+{no:17,title:'非标制造售前报价',ind:'制造工业',geo:'国内 · 柔性制造',arch:['报价定价','文档图像','隐性经验'],
+ pain:'两三百人、营收一二十亿的柔性制造企业，多品种小批量。场景不是「报价」，而是一整条链路：图纸解析 → 需求拆解 → 研发协同 → 生产方案 → 成本核算 → 报价。三个痛点：占用稀缺的核心技术骨干；报价准确率直接决定利润，报高丢单、报低利润被挤；响应速度——骨干在忙时报价能卡几天，订单就流失了。',
+ before:'上过 ERP 和报价模板，但只覆盖标准件和固定 SKU，非标部分又回到人手上，还多填一遍表。',
+ ai:'场景筛选的三个条件：大量知识型工作＋一定规模历史数据＋明确的效率瓶颈。六步走：①把「报价」拆成业务链路——进车间看订单从图纸到交付的全过程，翻历史报价单，分别问业务和老师傅：谁看图、谁拆需求、谁定物料、谁判工艺、谁核成本、谁报价、怎么交接；②用多模态解决非结构化入口，从 PDF/CAD/扫描件抽取材料、尺寸、结构要求，且必须结构化才能进入后续流程；③让 AI 进入企业自己的业务规则——不能凭模型自身知识报价，而是结构化需求 × 企业物料／供应商／历史数据／报价规则做匹配，由垂类 Agent 串联，每单人工校准后才对外。这一步是调整出来的：原想端到端直接出价，实测数字常对不上真实成本；④把老师傅经验变成数据资产，并设人工校准回填机制形成数据飞轮（AI 生成 → 人工校准 → 数据回填 → 下次更好）；⑤不等需求全清再开发，边干边改，阶段性产出为 Demo／流程／功能，来回几次甚至十几次；⑥推广路径是关键人试用 → 业务小组试点 → 真实订单验证 → 反馈调整 → 部门推广，试运行 1–2 个月。',
+ div:{ai:['图纸多模态解析、需求匹配、成本核算初稿'],sys:['企业物料／供应商／历史报价规则库、垂类 Agent 串联'],hu:['每单人工校准后才对外；只审模型把握不大的字段']},
+ gain:['上线前两个月磨合微调，现<b>至少减少 50% 以上相关工作量</b>','原本需 <b>3–5 人 → 明显减少</b>','企业处上升期，<b>未简单裁人</b>，而是把人释放回联系客户、谈项目、接订单，并相应调整岗位 KPI 与职责','内部评估四层：响应速度、报价可用性与准确率、图纸解析准确率、给企业运营带来多少价值'],
+ risk:'①图纸识别达不到报价要求——手写标注、特殊符号、非标准图框易错，一个尺寸抽错直接影响成本，解法是加人工校准兜底、只审模型把握不大的字段、修正后回填，准确率随真实数据越滚越高；②企业数据远没想象中标准，大量清洗结构化，更难的是从数据还原真实业务逻辑；③人——「技术是相对静态的，人的反应是动态的」，3–5 人变 1–2 人时员工先担心被优化，而乙方无权安排甲方员工，从员工视角看 FDE 做的事本身就威胁其岗位，因此必须是一把手工程，立项前就要与老板讨论生产力释放后怎么办，简单裁人从来不是选项。',
+ quote:'AI 落地的最后一道关，往往是组织架构的调整和转型。数据治理本身就是项目的一部分。把 AI 交付给企业只是过程，帮助企业重新设计人与 AI 一起工作的方式才是目的。'},
+{no:18,title:'生物科技数智化',ind:'生物科技',geo:'国内 · 上市公司',arch:['组织转型','经营分析','数据打通'],
+ pain:'上市公司，销售以直销＋渠道为主，200 多人。用「4 维模型」筛出价值最高的场景先行试点，销售第一个被选中——专业门槛高，需要懂法律法规、行业规则和大量话术，一线流动率不低，且缺乏信息化支持。痛点：客户关系散在销售个人手里，人一走线索就流失；大盘、业绩、提成靠 Excel 人工统计，管理层数据延迟一个月以上是常态；培训与招聘消耗老销售，新人培训周期近两个月；HR 人事资料还在纸质文件柜里。有 ERP 有 OA，但老旧不通，关键环节退回 Excel 和个人手里。',
+ before:'Excel 统计业绩与提成、纸质文件柜存人事资料、客户关系存在销售个人手中，管理层看到的数据延迟一个月以上。',
+ ai:'五步：①进现场诊断，逐部门访谈。原则是不要看到问题就判断该用 AI——销售提的成本质是信息化与数据问题，于是先帮客户选购 CRM，统一客户、订单、绩效；②补数据基础（CRM＋数仓），「AI 转型的第一步，往往发生在 AI 之前」；③AI＋BI 经营分析，BI 出销售大盘，AI 分析大区趋势与涨跌根因，结合销售日报周报与客户拜访记录；④提人效，AI 陪练＋电子化考试，招聘端 AI 简历筛选打分＋试点自动化一面——这里做过调整：原以为建个知识库就够，实测发现还要与考试、上岗标准、组织方式结合，于是改成串成闭环并按新人通过率优化；⑤搭企业自己的 AI 团队，建议董事长扩充内部团队，企业拿出 20 个编制，FDE 参与招聘与团队框架建设，后续企业自持算力与行业小模型。',
+ div:{ai:['趋势归因、日报周报分析、销售陪练、简历筛选打分'],sys:['CRM 统一客户订单绩效、数仓、BI 算业绩与提成'],hu:['销售做客户关系；管理层做决策']},
+ gain:['新人培训 <b>近两个月 → 约 3 周</b>','一个老销售每月约投入 <b>3–4 人天</b>筛简历面试，AI 介入后基本省下，折算至少可多拜访 <b>1–2 个客户</b>','管理层更快看清区域趋势与涨跌原因','企业拿出 <b>20 个编制</b>自建 AI 团队'],
+ risk:'①销售数据分散，直接上大模型只会做成演示项目——「业务领先和数字化领先完全是两回事」，IT 团队人力也不足，因此不跳过信息化和数据化阶段；②数据治理难，需分阶段补底子，来源杂、口径不一、历史质量参差，只能边清理历史边重建流程，先跑通最关键数据再边接边治理；③销售团队对 AI 的恐惧，第一反应是「是不是要替代我、公司是不是要裁员」，因此在高层认知对齐时第一个建议就是不要把 AI 和裁员绑在一起；若只换工具而绩效考核、岗位职责、产出要求都不变，工具做出来也没人用。',
+ quote:'FDE 真正重要的能力，是知道哪里不应该使用 AI。一个好的 FDE 项目，除了留下几个应用，还应该帮助企业留下继续进化的能力。'},
+{no:19,title:'消费品研发与包装审核',ind:'电商零售消费',geo:'国内 · 消费品牌',arch:['审核合规','隐性经验','组织转型'],
+ pain:'消费品牌＋上游工厂＋下游渠道，一年可能做 100 多个 SKU，链路是：需求 → 口味配方研发 → 包装 → 合规 → 中试 → 渠道上线。核心问题是链路里最重要的东西很多不在系统里——为什么是「脆」来自消费者调研或渠道沟通，研发为何选这个配方来自多次实验经验，SaaS 只留下结果，缺「为什么这么做」。两大症结：核心资源依赖人（产品经理判断、研发经验、渠道反馈都在个人脑中）；数据信息高度分散（SaaS 记录结果，决策上下文多为非结构化）。具体爆点是包装审核：它同时涉及四种视角——设计师查错别字等基础问题、法律法规人员查食品法／广告法的硬性要求、渠道查自有规范（如渠道 Logo 与品牌 Logo 的大小关系）、产品经理判断包装是否正确表达了产品。SKU 一多，待审包装就堆积排队。',
+ before:'各环节用单点 SaaS，产生数据孤岛；只要信息需要人主动输入就一定有损耗；规模变大后，问题从「有没有系统」变成「链路上的上下文能不能流动」。',
+ ai:'四步：①先观察再解决——最初直接参会、进飞书群，但外部人长驻会给业务同学压力，于是把一个 Agent 放进业务群「潜伏」两三周，只收集上下文不解决问题，再让它总结近期有哪些问题、哪些值得沉淀、哪些可能是 AI 机会。最终是 Agent 自己从真实业务沟通中定位到了包装审核。启发是 Agent 有双重角色：既执行任务，也观察业务。②先定义问题再定义 AI——不马上写「包装审核 Skill」，避免「外行指导内行」，而是借 HRBP 思路给 AI 写一份「岗位说明书」，让真正做审核的业务人员自己拆解：平时审什么、输入输出是什么、何时需要判断、什么规则可以直接执行、什么需要上下文。③把工作拆成「可自动化」与「需决策」两类——错别字、法规标准、能量计算等确定性问题由 AI 自动处理；渠道要求最初需人工，但每次反馈可沉淀成标准交给 AI 预审；审美表达判断留给人，但 AI 提供上下文支持，例如渠道上线后的销售表现可反向指导包装迭代。④工程化进入整条业务链。工程细节上：包装图有密集文字段落、NRV 能量计算表格、艺术字变体，单靠模型视觉理解不够，于是先按视觉模块拆分并分别选更合适的 OCR 与 VLM 方案，再把固定规则脚本化，把热量表与 NRV 计算逻辑固化成确定性代码，让模型只做解释和补录建议——这使「蛋白质 2.9g、每份 40g、NRV 5% 对不对」变得可复现验证；同时补上降级与审计策略，每个模块结果带来源与置信度，每个结论可追溯到原始数据，人接手时清楚该信什么、该查什么；再接入包装开发完整工作流（上游产品需求与设计，下游包材采购与物料生产），设计稿一提交，Skill 即跑一轮预检，把合规问题、NRV 计算、数字矛盾在交给下游前拦下；搭包装管理系统沉淀历史上线经验——每个上线并被市场或监管验证过的包装都是高质量样本，把标准、驳回记录、整改闭环放进上下文，就能提前告诉设计师「这个渠道的标识位置历史上被退过三次，建议你这么放」；最后是产研协同，产品经理与 Agent 把模糊需求转成产品概念需求，研发调用历史打样版本与当前物料上下文和自己的 Agent 讨论可打样方案。',
+ div:{ai:['视觉模块识别、确定性规则执行、异常拦截、上下文提示'],sys:['确定性代码算 NRV、包装管理系统沉淀历史样本、接入上下游工作流'],hu:['审美与表达判断；渠道例外决策；每次审核经验回填']},
+ gain:['法规人员减少处理低级错误与返工，产品经理把时间放在「包装到底应怎么表达产品」','决策质量提高','个人 Know-how 变成组织能力——每次决策、渠道反馈、审核经验都被沉淀','组织层面业务人员自己成为 Builder：与客户一起参加食品展会，带客户高管参加 Datawhale 黑客松并<b>拿了冠军</b>，回来后在客户公司内部办了一场黑客松，产出电商视频编导、考勤自动清洗等工具'],
+ risk:'①从承接问题到定义问题——适合 FDE 落地的问题必须同时满足：业务同学真实存在、有业务价值、解决后有可衡量指标，三者同时成立非常难；②从构建软件系统到定义组织系统——只承接需求会让项目没完没了，FDE 的本质是与老板、中层、业务同学共建一个 AI 与人协作的组织系统，再在外面套一个软件系统，三步是：共同梳理业务流并做价值排序、共同搭建雏形让业务同学一起 Build、FDE 才介入工程化。',
+ quote:'方法论是「点—线—面」：面是组织最终创造什么价值，线是把战略拆成一条条价值链，点是每个岗位的输入输出与 Know-how。FDE 是「AI HRBP ＋ AI 架构师」，技术复用，人的部分个性化。'},
+{no:20,title:'制造企业流程透明',ind:'制造工业',geo:'国内 · 汽车供应链',arch:['数据打通','经营分析'],
+ pain:'汽车供应链维修零部件企业，生产偏轻，主要是采购＋简单加工组装。已有管家婆这类标准化 ERP，订单、生产任务、采购、库存、发货数据都有，但没有形成老板需要的「经营视角」。老板关心的是：下单后内部怎么走、生产任务是否推进、采购有没有多订、库存多少、何时发货、要付供应商的钱对应哪些客户订单——但这些只能靠问下面的人。一个经典例子：供应商发 5000 个扳手实际到了 4980 个，按 ERP 标准逻辑数量未达 5000 无法正常入库，但现实里不会把 4980 个退回去，系统无法表达「实际发生了，但标准流程没有完整结束」。',
+ before:'数据都在 ERP 里，但没有按老板的经营逻辑串起来，只能靠人工问、人工核对、人工发现异常。',
+ ai:'四步：①先明确老板要看什么——不问「你想要什么 AI 功能」，而问「你每天最担心企业发生什么」「哪些事必须亲自盯」「哪些异常希望第一时间知道」；②保留原 ERP，只把必要数据取出二次加工，因为问题在于数据没有按经营逻辑串起来；③让 AI 做过去靠人工的数据匹配核对——财务要付供应商 10 万元，过去需人工对应供应商订单、客户订单、库存签收，AI 在这里的角色是「数据关系处理器」；④异常从「人去发现」变成「系统主动提醒」——在关键节点设判断标准（价格是否合理、库存是否异常、应付款能否与业务数据对应），异常经飞书卡片提醒。闭环是：正常运行 → 持续匹配核对 → 发现异常 → 主动提醒 → 人处理异常。',
+ div:{ai:['跨单据数据匹配核对、异常识别'],sys:['保留原 ERP、二次加工层、飞书卡片提醒'],hu:['老板处理异常并决策']},
+ gain:['上线时间短，<b>谨慎表示尚不能证明利润成本等经营指标已量化提升</b>','已可感知的变化：「有数据但看不清」被重新呈现（如 4980 个扳手）；财务应付款可追溯——对应哪些客户订单与上游采购、为什么形成','老板要的三件事中，「企业尽量自动运行」与「异常能通知他」的基础功能已实现，减少重复订货等仍需时间验证'],
+ risk:'①老板认知差异——FDE 本人是互联网大厂产品经理出身，与制造业老板看问题的方式不同；②行业 Know-how——客户涉及制造、医疗、贸易、物业、集采，「行业理解是 FDE 进入业务现场的门票」；③数据——这是该案例无法直接标准化复制的主因，即便同行业同规模企业，数据基础、口径、流程差异都很大，花了大量时间做清理治理与口径整理；④ROI——「FDE 的核心成本就是人的时间」，大厂习惯做到 80–90 分，真实场景要问「做到 80 分到底划不划算」，还要看长期维护成本，因此后来主动寻找更标准化的场景。另有一个反面案例：曾在金融机构，业务部门嫌设计师做营销图慢想用 AI 提效，因合规不能用外部模型只能本地部署，结果花不少钱搭了 AI 图片生成系统，但生成的图实际不能用——IT 完成了「AI 转型」、合规完成了数据安全、领导可以说企业完成了 AI 转型，可业务部门还是回去找设计师，「从企业经营的角度看，什么都没有改变」。',
+ quote:'AI 转型最好从老板真正关心的经营问题出发。业务部门必须有动力、有资源，不能变成「IT 部门为了完成 AI 转型而推动 AI 转型」。方法论可以复用，但底层的数据和业务逻辑，未必能直接复制。'},
+{no:21,title:'建筑消防施工图',ind:'建筑',geo:'国内 · 设计院',arch:['文档图像','审核合规','隐性经验'],
+ pain:'一个常规商业建筑项目，仅消防施工图就可能涉及数百个空间的设施布置，需按 CAD 图纸逐一完成喷淋系统设计、消火栓布置、灭火器配置与管线规划。这不是「画图」，而是要对照规范判断：这个空间属于什么危险等级？选什么 K 值喷头？喷头间距是否在规范允许范围？消火栓覆盖半径是否满足？三个痛点：重复性操作挤占创造性设计时间（几十个功能相似的空间要重复布置）；规范检查比绘制本身更耗时；修改迭代成本高（方案调整是常态，牵一发而动全身）。',
+ before:'CAD＋规范手册。效率天花板明显，熟练者一天能画的面积有上限，培养一名合格消防设计人员周期很长；经验难以标准化，因人而异导致图纸质量不一致，审核需额外投入；行业插件和参数化工具只解决单点问题（如自动算间距），无法覆盖从图纸理解到成果输出的全流程。',
+ ai:'三步：①解决 AI 理解 CAD 图纸——图纸包含墙体、门窗、空间标注、面积数据，不只是图像识别，还涉及建筑制图规范的理解，为此自研专用模型做图形解析，提取空间信息与建筑元素；②把消防行业规则系统化——空间类型（办公／商业／车库／设备用房）决定危险等级，危险等级决定喷淋 K 值、喷头间距、保护面积，消火栓还要考虑覆盖半径与消防通道，把规范条文转成可执行规则引擎，让 AI 遵循行业标准而不是自由发挥；③设计人机协作模式——原则是 AI 负责生成、人负责决策：常规空间用默认参数快速生成，特殊或复杂场景由设计人员调整危险等级、K 值、间距、布置方式，AI 结果定位为「专业可用的初稿」，最终决策权始终在设计人员手中。',
+ div:{ai:['CAD 图形解析、按规则引擎自动生成布置初稿'],sys:['自研专用解析模型、规范条文规则引擎'],hu:['调整危险等级与参数、做最终决策并担责']},
+ gain:['大型项目完整绘制原本需数天 → <b>约 30 分钟</b>生成初步结果，再由人调整确认','角色迁移：引入 AI 前设计人员约 <b>70% 时间在执行类工作</b>（绘制与规范检查）、<b>30% 在专业判断</b>；AI 进入后从「执行者」转向「审核者与决策者」','拓展新业务场景：投标阶段过去时间紧只能做粗略方案，现在可短时间呈现更完整的消防方案，提升投标质量','规范知识与设计逻辑被工程化沉淀'],
+ risk:'①自动化程度与专业控制权的平衡——用户最初期待「一键生成完整施工图」，但专业人员要求保留调整空间，因为消防设计涉及责任，不能接受「大概对」或完全黑箱，解法是分层设计：常规空间一键生成降低门槛，专业用户开放参数调整入口；②工程场景对可靠性要求极高——一个喷头位置偏差可能影响消防验收，因此明确边界：AI 只做基于规范规则的自动化生成，不做超规则的「创造性判断」，关键节点设人工确认，并保证基础输入数据准确；③让设计人员接受新方式——他们担心被替代、怀疑可靠性，解法是让其在实际使用中体验价值而非强行说服，亲眼看到大幅缩短初步工作时间且质量可控后，态度自然转变，自下而上推动重塑传统工作流。',
+ quote:'如果 AI 生成的图纸格式不符合设计院的标准，即使内容正确也无法进入实际流程。我们从技术交付出发，最终推动的是工作方式的实际改变。'},
+{no:22,title:'跨境电商库存补货广告',ind:'电商零售消费',geo:'东南亚 · 跨境电商',arch:['数据打通','文档图像','经营分析'],
+ pain:'十几人团队，做东南亚市场，主营服装。SKU 规模是每季度新增 500–800 个，全年约 2500–3000 个（每个颜色每个尺码都是独立 SKU）。客户初始需求极简：「能不能把这个 SaaS 和飞书打通」。FDE 没有把它当成一个 API 集成项目，而是连开几次会、让客户录屏演示实际工作，才发现库存只是其中一个环节。真实痛点是：工厂发货没用 RFID 或扫码枪，物流靠拍照识图，由员工人工看图填数据追踪单号——「数据已经产生了，人还在充当那个数据搬运工」；补货靠 Excel，从聚合 SaaS 扒数据、填计算表、按自有公式算、誊进另一个模板、生成 PDF 发供应商；广告持续烧钱，某个 SKU 库存已经很低广告还在跑，客户下单却发不出货。',
+ before:'人工看物流照片填表、Excel 多轮誊抄算补货、广告投放与库存完全脱节。',
+ ai:'业务链是：订单和库存数据 → 物流数据 → 补货决策 → 供应商下单 → 广告投放，值得解决的是让割裂的环节互相感知。四步：①先打通数据，同步到飞书让他们在熟悉环境里看实时库存。这里遇到全项目最难啃的技术问题——对方 SaaS 的 API 开放度很低，且 Key 有失效机制，A 团队刷新 Key 就会导致 B 团队 Key 失效，无法满足多团队共享，于是加一层开源云数据库 Supabase 做中转，数据先进中间库再同步飞书，「业务目标不变，实现路径可以不断调整」；②AI 处理物流照片，Agent 做「识图＋回填」并保留人工确认，AI 承担最耗时的第一轮识别录入；③AI 照着原来的公式算补货——没有重新发明库存算法，保留客户原有逻辑（看 SKU 过去三个月销售＋自有预测，算补什么颜色尺码多少），Agent 筛出需补货的 SKU 并给出预计周期与数量，人从「计算员」变成「审核员」，确认后直接生成 PDF 订单；④把库存与广告联动——这是客户自然产生的下一层需求，库存降到一定程度时 Agent 判断对应广告是否继续投，不足则调低额度甚至暂停。',
+ div:{ai:['物流照片识图回填、按原公式算补货、库存联动判断广告'],sys:['Supabase 中转库、飞书、自动生成 PDF 订单'],hu:['人工确认识别结果、审核补货方案后下单']},
+ gain:['物流照片与数据处理 <b>一人每天 4–5 小时 → 1 小时以内</b>','补货 <b>至少 2–3 小时 → Agent 算完后看一眼验证即可生成订单</b>','三个变化：人工搬数据 → 数据自动流动；人工计算 → AI 计算人工确认；库存补货广告各自决策 → <b>库存开始影响广告决策</b>（第三点比省几小时更重要，业务从单点自动化走向流程联动）','<b>诚实交代遗憾</b>：交付后客户移除了团队权限，后续营收、广告成本、利润数据未能拿到完整'],
+ risk:'①客户说出的需求不一定是真需求，需要反复要求演示甚至录屏。FDE 的重要角色是「翻译」，本人在团队中偏 Echo 角色——前期咨询、快速演示、技术选型、把客户的话整理成技术可执行的需求，甚至与技术团队开会前先让 AI 把客户需求重新梳理一遍，是一种 AI 优先的工作方式；②「API 能不能用，和『有 API』完全是两回事」，现实世界的 AI 落地常卡在模型之外，企业原有系统的开放程度、数据结构与接口限制才是真正的门槛；③先判断到底需不需要 AI——非常确定、规则很死的任务写脚本跑定时任务就够了，只有涉及语义理解与跨系统判断、脚本难以覆盖时才引入 Agent。',
+ quote:'不要把「需求不明确」理解成客户不知道自己要什么——客户通常知道自己想要什么，他们只是不会用技术语言描述。AI 落地一定要保留人在关键节点上的判断（Human in the loop）。交付之后，效果归因也是 FDE 工作的一部分。'},
+{no:23,title:'工程租赁获客报价',ind:'工程租赁',geo:'国内 · 中小企业',arch:['报价定价','数据打通','内容生成'],
+ pain:'中小企业的行业特点是：老板往往是唯一的销售、唯一的调度，很多管理工作也压在老板身上。客户结构上，营收 3000 万时可能有 2500 万来自几个大客户，500 万来自大量小客户。上行期长尾可以不管，但下行期「原来觉得无所谓的 500 万，可能明天就真的没有了」。所以真问题是：老板没办法服务的那些长尾客户，能不能被接住？而一个 10 万元左右的小订单，报价远比加减法复杂——租什么车、要不要配操作员、油费、距离、运输成本、干什么活，作业类型还会影响折价。',
+ before:'上行期靠老板亲自判断，这其实很合理：大客户价值高、价格不透明、金额大，老板判断比做一套复杂系统更靠谱。问题出在长尾——小订单也要老板把各因素过一遍，正在谈大客户时，小订单只能放掉。',
+ ai:'立场是「我不会纠结方案是不是纯 AI」，混合方案包括模型与 Prompt、传统业务规则、甚至运筹学。三步：①先梳理整个业务链路——怎么获客、从哪进来、怎么询价、哪些订单老板必须亲自处理、哪些可以标准化。把抖音、快手、小程序一并考虑，因为前面没有获客入口，后面做再漂亮的报价工具也没意义；让客户为询价专门下载 App 也不现实，所以入口要足够轻，比如用小程序直接承接订单；②订单分层——大客户不交给 AI，因为价格不透明且价值高，老板判断才合理；长尾标准小订单由系统收集需求，按车型、操作员、油费、距离、作业类型算出合理报价区间，AI 与客户沟通判断能否快速成交，区间内接受则继续，不接受或情况复杂则放弃或转人工。设想的节奏是一个订单几分钟内完成判断，能成交的快速进调度，不能成交的不再消耗老板时间；③把 AI 放进原有流程，让客户沿用原来的习惯——很多中小企业一线员工可能是中年人、学历不高、甚至不愿用小程序，为了技术上的「最优解」要求他们换工具改习惯，很可能没人用，所以要围绕原有习惯做适配，必要时前端极简，甚至加入语音或微信 Bot，「技术方案未必最优雅，但在真实业务里它才能真正跑起来」。',
+ div:{ai:['长尾订单需求收集、报价区间内沟通、判断能否快速成交'],sys:['传统业务规则＋运筹学算报价区间、小程序／微信 Bot 轻入口'],hu:['大客户定价与复杂订单由老板亲自判断']},
+ gain:['项目尚早，实际做这类业务仅一个多月','已落地的几个点，客户对效率提升<b>感受明显</b>，认可后才愿意继续往下做','价值三层：效率（小订单判断由 AI 前置）；<b>增收</b>（长尾订单被承接带来新增收入，这是谈合作时的核心价值）；人的工作方式变化（释放老板带宽去做高价值客户与决策，企业也可能承接更多订单）','商业模式是<b>按年系统维护费＋增收分成</b>，但增收分成在其他客户处不好泛化，实际谈判中难量化，更好的商业模式仍在探索'],
+ risk:'①需求看起来简单、做起来复杂——客户说「我要一个内部数据库，再做一个基于数据的搜索」，进去后发现数据库怎么搭、数据怎么清、数据量多大、检索怎么做都难以提前估算，有些项目真正难的是数据库与业务数据整理而不是模型，「不能因为客户说得简单，就默认交付也简单」；②客户接受程度——中小企业老板不会因为「这是一套先进的 AI 技术」就大规模改造企业，大刀阔斧改流程风险很高，所以打法是从很小的点切入，先找客户能看见结果、试错成本低的问题做 POC，跑通后再梳理路线图，「边做、边证明、边挖下一步需求」；③AI 工具本身不能决定成败——没有简单套用通用 AI 工具，能用现成的最好，解决不了就自己做工程化。另一个现实问题是使用率可能很低，如果老板自己都不用，项目就推不下去，因此把「一号位是否愿意采用」当作重要判断标准；也不能指望员工突然学会一堆新工具，更实际的做法是把入口做简并嵌入既有习惯。',
+ quote:'不要先找 AI 场景，要先找业务问题。不要把「标准化」理解成 100% 复制——底层能力标准化，业务解决方案保持一定程度的定制化。适配的方向，是把 AI 做成适合客户业务的人。FDE 真正需要的人，是既懂 AI、又懂业务、还能够理解企业经营的人。'},
+{no:24,title:'跨境快消海外数据断层',ind:'电商零售消费',geo:'澳洲乳企 · 中国／越南',arch:['数据打通','文档图像','经营分析'],
+ pain:'澳洲头部乳企做奶酪，以经销商模式进入中国与越南市场：总部负责品牌、供应链、产品，经销商负责当地销售与渠道。总部在澳洲，这两个市场一个零售触点都没有，「货发出去，过了国境就断了」。关键概念是 Sell In（品牌方卖给经销商）与 Sell Through（消费者最终从渠道买走），后者更能反映真实需求、营销效果与消费者反馈，但在跨境场景下最难获得，而发货量只是个中间指标。三个痛点：信息滞后，总部看到的可能已是几周甚至更久之前的数据；数据失真，问「销售情况怎么样」，有人理解为卖给经销商多少、有人理解为消费者买多少，口径从一开始就可能错；人工成本高，时间花在整理数据、开会解释、沟通确认上，真正要推动的市场业务反被搁置。',
+ before:'总部发货 → 经销商接收 → 经销商整理销售数据 → 销售人员做 Excel → 业务人员翻译整理反馈总部。数据标准不统一，各国各渠道格式完全不同，有 Excel、有 PDF，甚至有图片或手写凭证；字段名不统一、销售单位不一致、促销规则不同、买赠返利难以结构化。市场费用靠人工审核——费用是否合理、活动是否真实发生、金额是否符合行业水平，材料太多难以精细判断，「企业知道需要管理，但没有足够的人力去管理」。曾引入 BI 与报表系统但失败了：它只能处理已结构化的数据，而经销商原始数据恰恰是非结构化的，上线后清洗整理仍靠人工，「系统只是换了一个地方看 Excel」。',
+ ai:'三步：①进现场重新梳理业务流程——近距离观察总部销售运营团队如何接收数据、核对、开会，远程了解经销商侧的填报，明确总部需要什么、经销商能提供什么、哪些可自动获取、哪些必须人工确认。Sell In 较容易，因为来自总部发货系统、结构标准；Sell Through 更难，因为来自渠道末端，重点是从数据源头把口径对齐；②拆解 AI／人／系统各自承担什么——AI 负责从 PDF、图片、Excel 等非结构化数据中抽取信息、清洗与格式转换、识别异常、辅助生成分析；专业系统负责存储、管理、权限、流程流转；人负责最终判断、复杂决策、异常处理。流程由「人工传递 → 人工整理 → 人工审核」变成「AI 抽取 → AI 校验 → 风险标记 → 人工最终审核」；③让 AI 真正进入业务流程——最初设想搭一个专门的海外数据平台，现场走一圈后发现总部已有成熟管理系统在跑、员工与经销商都习惯了，推翻重建不现实，于是改为在原有系统上做能力叠加。不铺大摊子：第一版只做中国、只做一条产品线、只回答一个问题「这条线的钱花得值不值」，把这一条线端到端做完整——数据能进来、数字点得开、结论能进周会，跑通了越南才接进来。一条硬约束贯穿设计：不是模型直接吐一个答案，而是模型帮你定位到那一行原始数据，每个数字都点得开、看得见来源；有些问题模型本来可以答得更漂亮，但溯不回去，就不让它答。打通后，业务人员可以用大白话直接问「这个 SKU 为什么掉了」。',
+ div:{ai:['非结构化抽取、清洗转换、异常识别、辅助分析'],sys:['在总部原有成熟系统上做能力叠加、存储与权限、可追溯定位到原始行'],hu:['最终审核与复杂决策；经销商只需确认补充']},
+ gain:['人工审核市场费用过去能发现的问题比例<b>不到 10%</b>，AI 辅助后通过异常识别、历史数据对比、行业经验规则可发现<b>约 30%</b>（并非 100% 自动判断，系统按历史活动、区域情况、类似案例交叉比较标记异常，最终仍由人确认）','从经验管理变成数据管理：过去高度依赖个人经验，换个负责人判断力就下降；现在把「什么数据异常、什么费用合理、什么情况需进一步审核」沉淀下来，能力不再只存在于个人身上','最直观的是周会——以前前一个小时都在对数（「这个数对不对」「你那份和我那份为什么不一样」），现在数已经在那儿，会议直接从要不要动预算开始','提问方式也变了：以前是「给我一份报告」，现在直接问「这个 SKU 为什么掉了，是价格、铺货，还是渠道出了问题」——「能问出这么具体的问题，说明他们开始信这套东西了」','长期价值是建立了可复制的数据治理能力，支撑未来进入更多国家、更多经销商、更多渠道','数字已脱敏，量级对绝对值做过处理'],
+ risk:'难点不在技术层，技术大概只占 20%。①数据质量——「很多人认为 AI 项目最难的是模型，但实际落地时，数据才是最棘手的环节」，各国数据习惯差异大，难以用一套规则覆盖；准确性是门槛，一张发票可能是 PDF 也可能是图片，可能清晰也可能是手写折叠模糊，不做边界测试上线一定出问题。双层解法：先建数据规范再用 AI 处理非结构化数据（视觉语言模型对图片票据识别提升明显，很多过去需要专门训练的问题现在可直接用成熟模型），同时建立评估样本，收集正常、异常、边界案例持续测试真实表现；②业务团队与经销商接受度——总部最初持保留态度，习惯自己看 Excel 凭经验判断，有人怀疑「AI 说的就一定对吗」；经销商顾虑统一字段提交要改填报习惯、增加步骤。分两步走：对总部先让 AI 做辅助标记并保留人的最终决策权，每处风险标记都附依据（历史对比、区域参考、行业规则），让审核人看到判断逻辑，当业务人员发现 AI 确实帮他们找到了之前漏掉的问题时，信任自然建立；对经销商尽量降低填报门槛，能自动抽取的由 AI 完成，经销商只需确认补充；③企业权限与流程——已有成熟系统不能推倒重建，海外企业权限审批复杂，只能适配已有系统、增加接口、调整流程。',
+ quote:'BI 解决的是把数画成图，解决不了两个市场口径不一样——把两份不可比的数据画成漂亮的图，只是让不可比这件事更隐蔽了。模型是入场券，领域加交付才是护城河。评判一个 FDE 项目，不看 demo 多炫，看客户有没有真的改变决策方式。'}
+);
+
+/* ---- 统计数据 ---- */
+const GEO = [
+  {name:'国内（含港澳台）', v:16},
+  {name:'海外落地（德/美/澳）', v:4},
+  {name:'跨境业务（东南亚/中俄/TikTok）', v:4}
+];
+const DEPLOY = [
+  {name:'公有云 API / SaaS', v:11},
+  {name:'私有化部署（数据不出域）', v:5},
+  {name:'混合部署（云端推理＋本地模型）', v:4},
+  {name:'客户本地环境（Codex/Harness）', v:2},
+  {name:'未明确', v:2}
+];
+const TECH = [
+  {name:'RAG / 知识库', v:14},
+  {name:'Agent / 垂类 Agent', v:13},
+  {name:'多模态 VLM / OCR', v:10},
+  {name:'Workflow / Skill', v:9},
+  {name:'提示词工程 / Spec', v:8},
+  {name:'规则引擎 / 确定性代码', v:6},
+  {name:'BI / 数仓 / CRM', v:6},
+  {name:'RPA', v:3},
+  {name:'传统算法（运筹/遗传/GIS）', v:3},
+  {name:'MCP', v:2},
+  {name:'本地小模型（Qwen7b 等）', v:2},
+  {name:'Supabase / 中间库', v:1}
+];
+const RISK = [
+  {name:'数据质量 / 口径不统一', v:17},
+  {name:'组织与人（怕替代等）', v:15},
+  {name:'需求失真 / 说不清', v:11},
+  {name:'既有系统 · API · 权限', v:9},
+  {name:'AI 不确定 vs 生产可靠', v:8},
+  {name:'模型能力 vs 数据安全', v:6},
+  {name:'效果归因与 ROI 难量化', v:6},
+  {name:'客户认知两极', v:5},
+  {name:'跨部门协同与责任边界', v:5},
+  {name:'技术能力本身不足', v:2}
+];
+/* kind: 'down' = 越低越好（耗时/工作量），'up' = 越高越好（比率），'na' = 无可比数值 */
+const METRICS = [
+  {no:21,kind:'down',name:'建筑消防施工图',item:'大型项目完整绘制',before:'数天（约 3 天）',after:'约 30 分钟',b:100,a:0.7,mult:'≈144×',note:'初稿生成，仍需人调整确认'},
+  {no:4,kind:'down',name:'城市规划研判',item:'跨部门研判报告',before:'3–5 天',after:'10–20 分钟',b:100,a:0.8,mult:'≈120×',note:'单项分析 1 小时→5–10 分钟'},
+  {no:11,kind:'down',name:'外贸资料检索',item:'卡住美工与 3D 打样的难题',before:'预估 1–2 天',after:'约 10 分钟',b:100,a:1,mult:'≈100×',note:'单点事件，非流程指标'},
+  {no:9,kind:'down',name:'央国企财务报销',item:'单次报销全流程',before:'半月–1 月',after:'1–2 天',b:100,a:5,mult:'≈15×',note:'累计落地 10 个场景'},
+  {no:3,kind:'down',name:'诉讼律师卷宗',item:'14 名被告关系梳理',before:'2–3 天',after:'一晚',b:100,a:5,mult:'≈12×',note:'材料整理效率 +70%'},
+  {no:16,kind:'down',name:'电信数据分析',item:'一次网络问题分析',before:'按天计',after:'分钟–小时级',b:100,a:8,mult:'≈10×',note:'再由人工做质量确认'},
+  {no:22,kind:'down',name:'跨境电商物流',item:'物流照片识图录入 / 人·日',before:'4–5 小时',after:'1 小时以内',b:100,a:22,mult:'≈4.5×',note:'补货 2–3 小时→看一眼'},
+  {no:10,kind:'down',name:'线下零售对账',item:'单周期对账',before:'1–2 个人天',after:'几小时',b:100,a:25,mult:'≈4×',note:'查出 1–3 个百分点差异'},
+  {no:2,kind:'down',name:'车管所网办',item:'单件材料审核',before:'15 分钟',after:'3–5 分钟',b:100,a:27,mult:'≈3.8×',note:'日办件 700–800 → 1100'},
+  {no:6,kind:'down',name:'跨境物流装载',item:'单车装载时间',before:'5 小时',after:'约 2 小时',b:100,a:40,mult:'2.5×',note:'95–98 方→99 方，每方 +100 美元'},
+  {no:18,kind:'down',name:'生物科技销售',item:'新人培训周期',before:'近 2 个月',after:'约 3 周',b:100,a:26,mult:'≈2.6×',note:'老销售月省 3–4 人天'},
+  {no:7,kind:'down',name:'基金研发转型',item:'写文档耗时',before:'100%',after:'不到 50%',b:100,a:48,mult:'≈2×',note:'写代码省 1/3；仅几天短期数据'},
+  {no:17,kind:'down',name:'非标制造报价',item:'售前报价相关工作量',before:'100%（3–5 人）',after:'不到 50%（1–2 人）',b:100,a:50,mult:'≥2×',note:'人未裁，释放去谈客户'},
+  {no:5,kind:'down',name:'TikTok 达人履约',item:'平均履约周期',before:'≈30 天',after:'≈18 天',b:100,a:60,mult:'1.7×',note:'老板首次看清全链路漏斗'},
+  {no:24,kind:'up',name:'跨境快消数据',item:'市场费用审核问题发现率',before:'不到 10%',after:'约 30%',b:33,a:100,mult:'3×',note:'比率型指标（越高越好），仍由人确认'},
+  {no:1,kind:'na',name:'制造业经验传承',item:'新人培养周期',before:'2–3 个月以上',after:'培训可追踪 · 师傅抽身',b:null,a:null,mult:'未量化',note:'受访者给出的是质量指标：解析 95% / 召回 80%+'}
+];
+const ANTI = [
+  {t:'不要拿着 AI 去找问题',d:'手里有锤子就看什么都像钉子。NO.8 的入口是一句「我明明知道库里有，就是找不到」，而不是「我们要用 AI」。NO.23 说得更直接：<b>不要先找 AI 场景，要先找业务问题</b>。NO.13 的顺序是：先问「哪里存在真实的业务成本」，再考虑「这里是否需要用 AI」。'},
+  {t:'不要一上来就做大而全',d:'NO.4 主动把范围从全市收到一个单元的两条业务流；NO.24 第一版只做中国、一条产品线、一个问题；NO.9 先做「破冰项目」，摘最近最甜的桃子；NO.23 从试错成本低的小点做 POC。<b>范围收敛不是妥协，是让它能跑通的唯一办法。</b>'},
+  {t:'不要推翻客户已有的系统与习惯',d:'NO.24 原本想搭专门的海外数据平台，现场走一圈后改为在原有系统上叠加；NO.20 保留原 ERP 只做二次加工；NO.13 因企业已部署政府监管要求的软件而放弃自建平台；NO.16 坚持在网页、Teams、Slack 既有框架内调用。<b>NO.3 的教训最具体：律师第一反应是先找输入框，于是把对话框改成了案件工作台。</b>'},
+  {t:'不要迷信多智能体与「一句话出报告」',d:'NO.4 明确指出，客户想要的「一句话出报告」「多智能体博弈」并非最优解——高频规则明确的应固化成工作流，部分最优解问题用传统优化算法反而更精准。NO.6 干脆让大模型只做调度，三维计算全交给 Python 算法。<b>NO.4：硬编码能解决，就可以硬编码。</b>'},
+  {t:'不要把 AI 做成一个孤立的聊天框',d:'NO.16 的核心立场是「能跑起来」不等于「可以生产使用」，把 Agent 定位成可反复运行的业务系统而不是「会聊天的分析师」，并拒绝用「大模型本来就不确定」搪塞——<b>老板问两遍「哪个班成绩最好」，数据没变就该得到同一个答案</b>。NO.1 同样强调「AI 一定要进入流程，不能停在 Demo 里」。'},
+  {t:'不要把 AI 落地简单理解成「替代人」',d:'NO.18 在高层认知对齐时提的第一个建议就是<b>不要把 AI 和裁员绑在一起</b>；NO.17 明确「简单裁人从来不是选项」，人少了以后是把人释放回联系客户与谈项目，并相应调整 KPI；NO.14 全程强调 AI 是助手而非替代。NO.18 还指出：若只换工具而绩效考核、岗位职责、产出要求都不变，工具做出来也没人用。'},
+  {t:'不要在项目结束后才开始问 ROI',d:'NO.8 的做法是<b>把 ROI 定义放在项目开始</b>，并且只看「是否少买错、少重复购买」，把模型准确率和搜索速度降级为过程指标。NO.22 是反面教训——交付后客户移除了权限，效果归因做不了，于是反思「若重做，会一开始就设计效果基线」：上线前记录人工耗时，上线后持续记录。'},
+  {t:'不要因为客户说得简单，就默认交付也简单',d:'NO.23 的客户说「我要一个内部数据库再做个搜索」，进去才发现数据库怎么搭、数据怎么清、检索怎么做都无法提前估算。NO.22 的客户说「能不能把 SaaS 和飞书打通」，录屏演示之后才发现库存只是一个环节。<b>NO.22：「API 能不能用，和『有 API』完全是两回事。」</b>'},
+  {t:'不要跳过信息化与数据治理直接上模型',d:'NO.18 直言「业务领先和数字化领先完全是两回事」，销售提的成本质是信息化问题，于是先帮客户选 CRM，「AI 转型的第一步，往往发生在 AI 之前」。NO.14 的教训是有 ERP 有中台不等于准备好 AI，新业务、内控、人工环节的数据可能根本不存在。<b>NO.17：数据治理本身就是项目的一部分。</b>'}
+];
+const QUOTES = [
+  {t:'不要从「企业想做什么 AI」开始，要从「企业每天到底怎么工作」开始。',s:'NO.1 制造业经验传承'},
+  {t:'AI 一定要进入流程，不能停在 Demo 里。FDE 真正要解决的是 AI 与企业之间最后这一公里。',s:'NO.1 制造业经验传承'},
+  {t:'最难的是组织和规则，算法反而排在后面。',s:'NO.2 车管所网办'},
+  {t:'FDE 首先应更像一个顾问，其次才是开发工程师。成功标志是验收后客户还愿意做第二、第三个项目。',s:'NO.2 车管所网办'},
+  {t:'先让企业列出经营中最重要的十个问题。',s:'NO.2 车管所网办'},
+  {t:'AI 只是手段，改变工作方式才是目的。',s:'NO.3 诉讼律师'},
+  {t:'FDE 要像「竹子」一样扎进去。好的 FDE 项目，是交付结束以后客户自己开始长出 AI 能力。',s:'NO.4 城市规划研判'},
+  {t:'以前团队是在管理一堆表格，现在是在管理一条业务链路。',s:'NO.5 TikTok 达人履约'},
+  {t:'AI 落地要算清「经济账」。好的 AI 落地不是零和博弈，而是做增量。',s:'NO.6 跨境物流装载'},
+  {t:'FDE 更像一个「翻译官」，把 AI 的能力翻译成企业真正能用、能跑、能沉淀的工作方式。',s:'NO.7 基金研发转型'},
+  {t:'不要拿着 AI 去找问题。把 ROI 定义放在项目开始。',s:'NO.8 工业采购浪费'},
+  {t:'技术上能落地其实已经成功了 80%，真正容易让项目「死掉」的，是业务、人和组织。',s:'NO.9 央国企财务'},
+  {t:'第一单一定要选对——世上没有「六边形完美任务」。Day One 就要想清楚交付边界。',s:'NO.10 线下零售对账'},
+  {t:'FDE 要接受一个事实：大量工作并不「AI」。最理想的 FDE，是让客户越来越独立。',s:'NO.11 外贸资料资产化'},
+  {t:'AI 负责规模化，人负责最后的业务判断。',s:'NO.12 鞋服电商素材'},
+  {t:'先问「哪里存在真实的业务成本」，再考虑「这里是否需要用 AI」。',s:'NO.13 消防维保'},
+  {t:'人最难，其次是组织，再是数据，最后才是技术。中大型企业的 AI 落地一定是一号位工程。',s:'NO.14 国企工作流程'},
+  {t:'我默认电脑、手机上能够规模化完成的事情，都值得先尝试 AI。',s:'NO.15 本地生活内容'},
+  {t:'就像汽油本身不稳定，但汽车工程的意义，就是让汽油可以安全、稳定地驱动车辆。',s:'NO.16 电信数据分析'},
+  {t:'不要把「能跑」当成「能落地」。如果你只知道自行车，看到很远的地方就只能骑自行车过去。',s:'NO.16 电信数据分析'},
+  {t:'AI 落地的最后一道关，往往是组织架构的调整和转型。',s:'NO.17 非标制造报价'},
+  {t:'把 AI 交付给企业只是过程，帮助企业重新设计人与 AI 一起工作的方式才是目的。',s:'NO.17 非标制造报价'},
+  {t:'FDE 真正重要的能力，是知道哪里不应该使用 AI。',s:'NO.18 生物科技数智化'},
+  {t:'一个好的 FDE 项目，除了留下几个应用，还应该帮助企业留下继续进化的能力。',s:'NO.18 生物科技数智化'},
+  {t:'FDE 是「AI HRBP ＋ AI 架构师」：技术复用，人的部分个性化。',s:'NO.19 消费品包装审核'},
+  {t:'AI 转型最好从老板真正关心的经营问题出发。不能变成「IT 部门为了完成 AI 转型而推动 AI 转型」。',s:'NO.20 制造流程透明'},
+  {t:'如果 AI 生成的图纸格式不符合设计院的标准，即使内容正确也无法进入实际流程。',s:'NO.21 建筑消防施工图'},
+  {t:'客户通常知道自己想要什么，他们只是不会用技术语言描述。',s:'NO.22 跨境电商'},
+  {t:'API 能不能用，和「有 API」完全是两回事。',s:'NO.22 跨境电商'},
+  {t:'不要先找 AI 场景，要先找业务问题。底层能力标准化，业务解决方案保持一定程度的定制化。',s:'NO.23 工程租赁'},
+  {t:'FDE 真正需要的人，是既懂 AI、又懂业务、还能够理解企业经营的人。',s:'NO.23 工程租赁'},
+  {t:'把两份不可比的数据画成漂亮的图，只是让不可比这件事更隐蔽了。',s:'NO.24 跨境快消数据'},
+  {t:'模型是入场券。领域加交付，才是护城河。',s:'NO.24 跨境快消数据'},
+  {t:'评判一个 FDE 项目，不看 demo 多炫，看客户有没有真的改变决策方式。',s:'NO.24 跨境快消数据'},
+  {t:'一次项目的结束，不应该意味着 AI 能力的离开。',s:'原书前言'}
+];
+
+/* ---- Q3 流程图：每案例的实施链路，全部取自受访者自述步骤 ----
+   r: in=输入/前置  ai=AI 承担  sys=系统/确定性代码  hu=人 承担 */
+const ROLE = {in:{n:'输入',c:'var(--fg-3)'}, ai:{n:'AI',c:'var(--sys)'}, sys:{n:'系统',c:'var(--gain)'}, hu:{n:'人',c:'var(--stamp)'}};
+const FLOWS = {
+1:[{r:'hu',l:'跟岗走流程',d:'把生产现场完整走一遍'},{r:'hu',l:'画知识地图',d:'梳理老师傅的隐性经验'},{r:'sys',l:'文档解析',d:'准确率约 95%'},{r:'ai',l:'RAG 检索',d:'召回片段准确率 80%+'},{r:'sys',l:'接入原培训平台',d:'复用客户已有技术栈'},{r:'sys',l:'打卡式课程',d:'每课配问答、进度可视'},{r:'hu',l:'陪跑近 2 月',d:'师傅转向盯进度与复杂问题'}],
+2:[{r:'in',l:'9 类图像材料',d:'群众上传的票据照片'},{r:'hu',l:'采集标注',d:'9 类分别采集样本训练'},{r:'ai',l:'看：OCR／视觉',d:'识别率 70%+ → ≈98%'},{r:'ai',l:'读：大模型抽取',d:'抽出结构化要素'},{r:'sys',l:'填＋搬：RPA',d:'串到公安部业务系统'},{r:'hu',l:'存疑件复核',d:'放宽尺度交甲方决策'}],
+3:[{r:'hu',l:'现场旁听',d:'早 9 点起、旁听案件讨论会'},{r:'hu',l:'抽 7 个标准模块',d:'把律师工作拆成模块'},{r:'sys',l:'建案件工作空间',d:'入口从对话框改为工作台'},{r:'ai',l:'材料理解与摘要',d:'上千页卷宗 NLU 处理'},{r:'sys',l:'图谱／法条／判例',d:'知识图谱＋结构化检索＋精确匹配'},{r:'sys',l:'三层四步法节点',d:'请求权基础分析转成流程节点'},{r:'hu',l:'律师判断',d:'策略与决策仍由律师做'}],
+4:[{r:'hu',l:'主动收敛范围',d:'全市 → 一区 → 米市巷单元 → 两条业务流'},{r:'sys',l:'搭三个底座',d:'真实数据＋规则 RAG＋报告模板'},{r:'ai',l:'理解意图',d:'模型负责理解与编排'},{r:'sys',l:'调度专业工具',d:'高频固化工作流，长尾交 Agent'},{r:'sys',l:'GIS 算事实',d:'复杂推理走云端，固定流程走本地 Qwen7b'},{r:'sys',l:'一文一图一表',d:'部门不肯给规则也必出'},{r:'hu',l:'地图回显＋人决策',d:'结果回显到地图，人来判断'}],
+5:[{r:'hu',l:'画全链路流程图',d:'把宽泛需求拆成四个环节'},{r:'ai',l:'AI 筛达人',d:'从大海捞针到精准名单'},{r:'hu',l:'BD 沟通',d:'发消息沟通保留人工'},{r:'ai',l:'商品×达人匹配',d:'先筛人再判断卖点契合'},{r:'ai',l:'生成拍摄脚本',d:'达人特点＋卖点＋爆款参考，属「利他能力」'},{r:'sys',l:'履约状态提醒',d:'无动作才转人工'},{r:'sys',l:'统一业务视角',d:'达人—履约—GMV 漏斗'}],
+6:[{r:'sys',l:'LiDAR 采集',d:'iPad Pro＋激光测距，硬件约 8500 元'},{r:'ai',l:'大模型解析任务',d:'理解、解析、调用算法、解释结果'},{r:'sys',l:'Python 三维算法',d:'高度图追踪＋贪心放置＋多策略排序＋遗传算法'},{r:'sys',l:'生成装车指导图',d:'货物编号、方向、截面示意、顺序'},{r:'sys',l:'截面法',d:'让工人站车门口就能操作'},{r:'hu',l:'工人执行装载',d:'5 小时 → 约 2 小时'},{r:'sys',l:'实测回填',d:'95–98 方 → 稳定约 99 方'}],
+7:[{r:'hu',l:'分角色摸需求',d:'老板／研发／产品经理／HR 各不同'},{r:'hu',l:'搭业务故事线',d:'五天半线下培训共三期'},{r:'sys',l:'从 0 整理 Spec 文档',d:'客户误以为是阿里内部提炼好的'},{r:'hu',l:'定角色边界',d:'十几份 Markdown 怎么拆、并发冲突怎么处理'},{r:'ai',l:'Codex／Claude Code',d:'按统一方法并行协同开发'},{r:'hu',l:'现场随反馈调整',d:'认知、工具、组织三层同时统一'}],
+8:[{r:'hu',l:'数月访谈＋坐旁边看',d:'从「ERP 不好用」追到重复采购'},{r:'hu',l:'梳理约 15 个功能点',d:'逐项列出'},{r:'hu',l:'利益相关方确认＋投票',d:'业务部门投票排序'},{r:'hu',l:'7–8 维度评估',d:'数据能否拿到、能否写回、AI 能否解决…'},{r:'sys',l:'数据清洗标准化',d:'治理被污染的历史数据'},{r:'ai',l:'语义检索',d:'「我上次用过，现在找不到」'},{r:'sys',l:'写回业务系统',d:'两周左右见效的场景先做'},{r:'hu',l:'业务人员确认价值',d:'只看是否少买错、少重复购买'}],
+9:[{r:'in',l:'钉钉说「我要报销」',d:'员工发发票给机器人'},{r:'ai',l:'票据识别',d:'识别发票信息'},{r:'sys',l:'关联业务信息',d:'出差申请、审批、部门、项目'},{r:'ai',l:'按财务规则判断',d:'费用性质与科目归属'},{r:'ai',l:'多 AI 角色监督',d:'执行判断／监督／发现风险三角色'},{r:'sys',l:'风险监控',d:'不确定项进风险监控'},{r:'sys',l:'RPA 作「手」',d:'自动开浏览器进集团网站建单填写提交'},{r:'hu',l:'人确认风险项',d:'半月–1 月 → 1–2 天'}],
+10:[{r:'hu',l:'选对账场景',d:'多需求中挑价值最直接可算的'},{r:'in',l:'门店与商场两套数据',d:'收银数据 vs 结算单据'},{r:'ai',l:'OCR＋视觉比对',d:'纸质单据与扫描件识别'},{r:'sys',l:'定时工作流',d:'按周期自动运行'},{r:'hu',l:'人只看差异项',d:'1–2 人天 → 几小时'},{r:'sys',l:'阶段二加后端',d:'阶段一 Cherry Studio＋本地电脑即可'},{r:'hu',l:'追因 1–3 个百分点差异',d:'重新做回过去因成本放弃的事'}],
+11:[{r:'sys',l:'先当网络工程师',d:'4 路由器＋2 光猫＋交换机＋软路由'},{r:'sys',l:'重整文件建关系',d:'大量图片资料组织化'},{r:'ai',l:'10 分钟解难题',d:'不规则刻度其实是角度，老板原以为要 1–2 天'},{r:'sys',l:'Harness 整理成任务包',d:'框架／原则／规范／Demo，前期几十小时'},{r:'ai',l:'客户本地 Codex 开发',d:'资料不外带，客户侧跑约 40 小时'},{r:'sys',l:'自研远程通道',d:'长任务夜里跑'},{r:'ai',l:'日志整理回传',d:'客户侧 AI 整理测试日志'},{r:'sys',l:'沉淀为企业能力',d:'文档化＋工作流＋Skill＋Agent'}],
+12:[{r:'hu',l:'识别关键干系人',d:'老板看战略／管理者看成本／基层怕加活'},{r:'hu',l:'解决员工小麻烦破冰',d:'提示词太长、生成图带水印'},{r:'hu',l:'调研 → Demo',d:'把「好看」定义成「能商用」'},{r:'ai',l:'素材规模化生成',d:'主图、详情、挂车视频'},{r:'sys',l:'一致性三层进验收标准',d:'人物／服饰／场景'},{r:'ai',l:'AI 第一道检查',d:'先自检再交人'},{r:'hu',l:'人工确认放行',d:'AI 负责规模化，人负责业务判断'},{r:'sys',l:'沉淀为公司级素材资产',d:'反馈写进文档，客户持续填写'}],
+13:[{r:'hu',l:'逐部门沟通＋现场观察',d:'维保／人事／行政／财务'},{r:'hu',l:'发现方向性错误',d:'企业已有政府监管软件且不开接口'},{r:'sys',l:'在已有流程轻量改造',d:'避免员工两套系统重复操作'},{r:'sys',l:'阶段一：纸质迁线上',d:'把纸质记录与 Excel 表全部迁到线上，先完成流程数字化'},{r:'ai',l:'阶段二：AI 介入',d:'月检表重复描述由 AI 生成'},{r:'ai',l:'调用历史记录',d:'设备档案与维修历史'},{r:'hu',l:'消防专业判断',d:'系统管流程、AI 处理信息、人做判断'}],
+14:[{r:'hu',l:'场景值不值得做',d:'价值 × 可行性，避免做出玩具'},{r:'hu',l:'知识萃取师访谈',d:'让业务讲怎么做／为什么／哪些例外'},{r:'sys',l:'隐性知识结构化',d:'何时必须人工也一并记下'},{r:'sys',l:'先梳理流程再做 Agent',d:'通用 LLM 概率生成是幻觉来源'},{r:'hu',l:'AI 通识培训',d:'发现骨干连提示词是什么都不知道'},{r:'ai',l:'Agent 作为助手',d:'从不强调替代'},{r:'hu',l:'人确认后进工作流',d:'涉法务财务责任 AI 不能承担'},{r:'hu',l:'员工自建 Agent',d:'行政同事自己用提示词做补货 Agent'}],
+15:[{r:'hu',l:'看懂业务',d:'现场观察谁负责什么、怎么判断好坏'},{r:'sys',l:'拆成业务字段',d:'客户、门店类型、主推菜品、活动、卖点'},{r:'sys',l:'融入优秀写法',d:'把优秀文案人的范式与参考案例写进去'},{r:'sys',l:'组成生产流程',d:'提示词＋Skill＋业务参数＋校验审计 Loop'},{r:'ai',l:'AI 先跑',d:'高峰一天两三百条文案'},{r:'hu',l:'人负责判断',d:'「味道不对」由人识别'},{r:'sys',l:'回退机制',d:'某节点做不好就交还给人'},{r:'ai',l:'真实反馈调优',d:'按平台数据调提示词、顺序、模型选型'}],
+16:[{r:'hu',l:'先搞清三问',d:'要什么输入／需要什么输出／中间发生什么'},{r:'hu',l:'拆细组件再重组',d:'把原分析流程拆开'},{r:'sys',l:'定位为业务系统',d:'不是「会聊天的分析师」，要可反复运行'},{r:'sys',l:'云端统一控制',d:'几十到上百分析师不能各装一套'},{r:'sys',l:'语义层＋记忆',d:'用户数据与经验反哺系统'},{r:'ai',l:'理解追问并执行',d:'「那如果我把这批人筛出来呢」'},{r:'sys',l:'既有入口调用',d:'网页／Teams／Slack，仍以聊天方式使用'},{r:'hu',l:'人工质量确认',d:'按天 → 分钟到小时级'}],
+17:[{r:'hu',l:'进车间看全链路',d:'图纸→需求→研发→生产→成本→报价'},{r:'hu',l:'翻历史报价单＋分别问人',d:'谁看图／谁拆需求／谁定物料／谁核成本'},{r:'ai',l:'多模态解析图纸',d:'PDF／CAD／扫描件抽材料尺寸结构'},{r:'sys',l:'必须结构化',d:'否则无法进后续流程'},{r:'sys',l:'匹配企业自己的规则',d:'物料／供应商／历史数据／报价规则，不凭模型知识'},{r:'ai',l:'垂类 Agent 串联',d:'原想端到端出价，实测对不上真实成本'},{r:'hu',l:'每单人工校准',d:'只审模型把握不大的字段'},{r:'sys',l:'校准回填数据飞轮',d:'AI 生成→人工校准→回填→下次更好'},{r:'hu',l:'关键人→小组→部门推广',d:'真实订单验证，试运行 1–2 个月'}],
+18:[{r:'sys',l:'4 维模型筛场景',d:'销售第一个被选中'},{r:'hu',l:'进现场逐部门诊断',d:'销售提的成本质是信息化问题'},{r:'sys',l:'先选 CRM',d:'统一客户、订单、绩效——AI 转型第一步在 AI 之前'},{r:'sys',l:'补数仓',d:'边清理历史边重建流程'},{r:'sys',l:'BI 出销售大盘',d:'业绩与提成交给 BI 算，不交 AI'},{r:'ai',l:'AI 分析趋势与根因',d:'结合日报周报与客户拜访记录'},{r:'ai',l:'AI 陪练＋简历筛选',d:'与考试、上岗标准串成闭环'},{r:'hu',l:'按新人通过率优化',d:'近 2 个月 → 约 3 周'},{r:'sys',l:'建企业自己的 AI 团队',d:'企业拿出 20 个编制'}],
+19:[{r:'ai',l:'Agent 潜伏业务群',d:'两三周只收集上下文不解决问题'},{r:'ai',l:'Agent 总结问题',d:'近期有哪些问题、哪些值得沉淀'},{r:'hu',l:'定位到包装审核',d:'是 Agent 自己从真实沟通中找到的'},{r:'hu',l:'写 AI 岗位说明书',d:'借 HRBP 思路，让业务人员自己拆解'},{r:'hu',l:'拆可自动化／需决策',d:'错别字法规自动，审美留给人'},{r:'ai',l:'视觉模块拆分识别',d:'密集文字、艺术字分别选 OCR 与 VLM'},{r:'sys',l:'NRV 固化成确定性代码',d:'让「蛋白质 2.9g、每份 40g、NRV 5%」可复现'},{r:'sys',l:'降级与审计策略',d:'每个结果带来源置信度、可追溯原始数据'},{r:'sys',l:'接入包装开发工作流',d:'设计稿一提交即跑预检，拦在交给下游前'},{r:'sys',l:'包装管理系统沉淀样本',d:'「这个渠道的标识位置历史上被退过三次」'},{r:'hu',l:'人做审美与例外决策',d:'渠道上线表现反向指导包装迭代'}],
+20:[{r:'hu',l:'先问老板最担心什么',d:'不问「想要什么 AI 功能」'},{r:'sys',l:'保留原 ERP',d:'只把必要数据取出'},{r:'sys',l:'二次加工成经营视角',d:'问题是数据没按经营逻辑串起来'},{r:'ai',l:'数据关系处理器',d:'应付款对应哪些供应商／客户订单／签收'},{r:'sys',l:'关键节点设判断标准',d:'价格是否合理、库存是否异常'},{r:'sys',l:'飞书卡片提醒',d:'4980 个扳手这类异常主动浮出'},{r:'hu',l:'人处理异常',d:'从「人去发现」变「系统主动提醒」'}],
+21:[{r:'in',l:'CAD 图纸',d:'墙体、门窗、空间标注、面积'},{r:'ai',l:'自研模型解析图纸',d:'不只是图像识别，还涉及建筑制图规范'},{r:'sys',l:'提取空间与建筑元素',d:'数百个空间逐一定位'},{r:'sys',l:'空间类型 → 危险等级',d:'办公／商业／车库／设备用房'},{r:'sys',l:'规范条文转规则引擎',d:'定喷淋 K 值、喷头间距、保护面积、覆盖半径'},{r:'ai',l:'生成布置初稿',d:'AI 遵循标准而非自由发挥，数天 → 约 30 分钟'},{r:'hu',l:'分层调整',d:'常规空间一键生成，专业用户开放参数入口'},{r:'hu',l:'人审核并担责',d:'不接受「大概对」或黑箱，70% 执行 → 转为审核决策'}],
+22:[{r:'hu',l:'让客户录屏演示',d:'没把「打通 SaaS 和飞书」当 API 项目'},{r:'hu',l:'识别真实业务链',d:'订单库存→物流→补货→下单→广告'},{r:'sys',l:'Supabase 中转',d:'对方 API 开放度低且 Key 有失效机制'},{r:'sys',l:'同步到飞书',d:'在熟悉环境看实时库存'},{r:'ai',l:'Agent 识图回填',d:'物流照片第一轮识别录入'},{r:'hu',l:'人工确认',d:'4–5 小时/天 → 1 小时以内'},{r:'ai',l:'照原公式算补货',d:'不重新发明库存算法，保留客户逻辑'},{r:'hu',l:'人从计算员变审核员',d:'2–3 小时 → 看一眼，确认后生成 PDF 订单'},{r:'sys',l:'库存联动广告',d:'库存不足则调低额度甚至暂停投放'}],
+23:[{r:'hu',l:'先梳理业务链路',d:'怎么获客／询价／哪些必须老板亲自处理'},{r:'sys',l:'入口要足够轻',d:'小程序直接承接，抖音快手一并考虑'},{r:'hu',l:'订单分层',d:'大客户不交 AI，价格不透明且价值高'},{r:'sys',l:'长尾标准小订单收集需求',d:'车型、操作员、油费、距离、作业类型'},{r:'sys',l:'规则＋运筹学算报价区间',d:'「我不会纠结方案是不是纯 AI」'},{r:'ai',l:'AI 与客户沟通',d:'判断能否快速成交'},{r:'hu',l:'区间内成交／复杂转人工',d:'一个订单几分钟内完成判断'},{r:'sys',l:'嵌回原有习惯',d:'必要时前端极简，甚至加语音或微信 Bot'}],
+24:[{r:'hu',l:'进现场梳理流程',d:'看总部如何接收、核对、开会'},{r:'sys',l:'从源头对齐口径',d:'Sell In 易、Sell Through 难'},{r:'ai',l:'非结构化抽取',d:'PDF、图片、手写凭证、Excel'},{r:'sys',l:'清洗与格式转换',d:'各国字段名、销售单位、促销规则不一'},{r:'ai',l:'AI 校验＋异常识别',d:'按历史活动、区域、类似案例交叉比较'},{r:'sys',l:'风险标记附依据',d:'让审核人看到判断逻辑'},{r:'hu',l:'人工最终审核',d:'问题发现率不到 10% → 约 30%'},{r:'sys',l:'每个数字点得开',d:'溯不回去的问题就不让模型答'},{r:'sys',l:'窄 MVP：一国一线一问',d:'跑通中国这条线，越南才接进来'}]
+};
+/* ---- Q3 流程图渲染 ---- */
+function renderFlow(no){
+  const steps = FLOWS[no];
+  if(!steps || !steps.length) return '';
+  const legend = ['in','ai','sys','hu'].map(r=>
+    `<span class="fc-lg"><i style="background:${ROLE[r].c}"></i>${ROLE[r].n}</span>`).join('');
+  const nodes = steps.map((s,i)=>
+    `<div class="fc-node ${s.r}"><span class="fc-lab">${i+1}. ${esc(s.l)}</span><span class="fc-det">${esc(s.d)}</span></div>`
+  ).join('');
+  return `<div class="flowchart">
+      <div class="fc-h"><span>实施链路 · ${steps.length} 步</span><span class="fc-legend">${legend}</span></div>
+      <div class="fc-chain">${nodes}</div>
+    </div>`;
+}
+/* 折行处把箭头从「→」改为「↓」，避免指向空白 */
+function fixFlowArrows(){
+  document.querySelectorAll('.fc-chain').forEach(chain=>{
+    const nodes = Array.from(chain.querySelectorAll('.fc-node'));
+    for(let i=0;i<nodes.length-1;i++){
+      nodes[i].classList.toggle('dn', nodes[i].offsetTop !== nodes[i+1].offsetTop);
+    }
+  });
+}
+
+/* ============ 渲染层 ============ */
+const CSS = getComputedStyle(document.documentElement);
+const cv = n => CSS.getPropertyValue(n).trim();
+const C = {
+  stamp: cv('--stamp'), sys: cv('--sys'), gain: cv('--gain'), risk: cv('--risk'),
+  fg: cv('--fg'), fg2: cv('--fg-2'), fg3: cv('--fg-3'),
+  line: cv('--line'), ink800: cv('--ink-800'), ink850: cv('--ink-850'), ink750: cv('--ink-750')
+};
+const FONT = cv('--font-body'), MONO = cv('--font-mono');
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const pad = n => String(n).padStart(2,'0');
+
+/* ---- 01 场景矩阵 ---- */
+(function buildMatrix(){
+  const el = document.getElementById('matrix');
+  if(!el) return;
+  let h = '<div class="mx-h corner">行业 ＼ 场景原型</div>';
+  ARCHETYPES.forEach(a=>{ h += `<div class="mx-h"><b>${esc(a.n)}</b>${esc(a.d)}</div>`; });
+  INDUSTRIES.forEach(ind=>{
+    const list = CASES.filter(c=>c.ind===ind.k);
+    if(!list.length) return;
+    h += `<div class="mx-row-h"><b>${esc(ind.n)}</b><i>${list.length} 例</i></div>`;
+    ARCHETYPES.forEach(a=>{
+      const cs = list.filter(c=>c.arch.includes(a.k));
+      h += '<div class="mx-cell">';
+      if(cs.length){ cs.forEach(c=>{ h += `<button class="dot" data-go="${c.no}" title="NO.${c.no} ${esc(c.title)}" aria-label="跳转到 NO.${c.no} ${esc(c.title)}">${pad(c.no)}</button>`; }); }
+      else { h += '<div class="mx-empty">·</div>'; }
+      h += '</div>';
+    });
+  });
+  el.innerHTML = h;
+  el.addEventListener('click', e=>{
+    const b = e.target.closest('[data-go]');
+    if(!b) return;
+    jumpToCase(+b.dataset.go);
+  });
+})();
+
+function jumpToCase(no){
+  resetFilters();
+  const t = document.querySelector(`.case[data-no="${no}"]`);
+  if(!t) return;
+  t.classList.add('open');
+  const y = t.getBoundingClientRect().top + window.scrollY - 76;
+  window.scrollTo({top:y, behavior:'smooth'});
+  t.style.transition='box-shadow .4s';
+  t.style.boxShadow='0 0 0 1px '+C.stamp;
+  setTimeout(()=>{ t.style.boxShadow='none'; }, 1600);
+}
+
+/* ---- 02 图表：内联 SVG 自绘，零外部依赖 ----
+   宿主页面 CSP 为 script-src 'unsafe-inline'，外链 CDN 脚本会被拦截，
+   故所有图表由原生 JS 直接生成 SVG，不加载任何第三方库。 */
+const _mctx = document.createElement('canvas').getContext('2d');
+function tw(text, font){ _mctx.font = font; return _mctx.measureText(String(text)).width; }
+function niceTicks(max, count){
+  count = count || 4;
+  const raw = (max || 1) / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
+  const top = Math.ceil((max || 1) / step) * step;   // 末位刻度须 >= 数据最大值
+  const t = [];
+  for(let v = 0; v <= top + 1e-9; v += step) t.push(Math.round(v * 1000) / 1000);
+  return t;
+}
+function svgOpen(w, h){
+  return `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" role="img" xmlns="http://www.w3.org/2000/svg">`;
+}
+
+/* 横向条形图 · rows: [{name, value, color, tip}] */
+function drawBars(el, rows, opt){
+  if(!el || !rows || !rows.length) return;
+  opt = opt || {};
+  const W = Math.max(280, el.clientWidth || 560);
+  const fsY = opt.labelSize || 14;
+  const fontY = fsY + 'px ' + FONT;
+  const padL = Math.ceil(Math.max(...rows.map(r => tw(r.name, fontY)))) + 14;
+  const padR = opt.padR || 34, padT = 16, padB = 26;
+  const rowH = opt.rowH || 26;
+  const plotW = Math.max(40, W - padL - padR);
+  const plotH = rows.length * rowH;
+  const ticks = opt.ticks || niceTicks(Math.max(...rows.map(r => r.value)));
+  const xmax = Math.max(ticks[ticks.length - 1], ...rows.map(r => r.value), opt.max || 0, 1);
+  const H = padT + plotH + padB;
+  const barH = Math.min(opt.barH || 13, rowH - 10);
+  const x = v => padL + v / xmax * plotW;
+  let s = svgOpen(W, H);
+  ticks.forEach(t => {
+    const gx = x(t);
+    s += `<line x1="${gx.toFixed(1)}" y1="${padT}" x2="${gx.toFixed(1)}" y2="${padT + plotH}" stroke="${C.line}" stroke-width="1" stroke-dasharray="3 4" opacity="${t === 0 ? .95 : .5}"/>`;
+    s += `<text x="${gx.toFixed(1)}" y="${padT + plotH + 16}" text-anchor="middle" fill="${C.fg3}" font-family="${MONO}" font-size="14">${t}</text>`;
+  });
+  rows.forEach((r, i) => {
+    const cy = padT + i * rowH + rowH / 2;
+    const w = Math.max(r.value / xmax * plotW, 0);
+    s += `<g class="svg-bar"><title>${esc(r.tip || (r.name + '：' + r.value))}</title>`
+      +  `<text x="${padL - 10}" y="${cy}" text-anchor="end" dominant-baseline="central" fill="${C.fg2}" font-family="${FONT}" font-size="${fsY}">${esc(r.name)}</text>`
+      +  `<rect x="${padL}" y="${(cy - barH / 2).toFixed(1)}" width="${w.toFixed(1)}" height="${barH}" rx="1.5" fill="${r.color}"/>`
+      +  `<text x="${(padL + w + 7).toFixed(1)}" y="${cy}" dominant-baseline="central" fill="${C.fg3}" font-family="${MONO}" font-size="14">${r.value}</text></g>`;
+  });
+  el.innerHTML = s + '</svg>';
+  el.style.height = H + 'px';
+}
+
+/* 环形图组 · groups: [{title, rows:[{name, value, color}]}] */
+function arcPath(cx, cy, rO, rI, a0, a1){
+  const P = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  const large = (a1 - a0) > Math.PI ? 1 : 0;
+  const [x0, y0] = P(rO, a0), [x1, y1] = P(rO, a1);
+  const [x2, y2] = P(rI, a1), [x3, y3] = P(rI, a0);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${rO} ${rO} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`
+       + `L${x2.toFixed(2)} ${y2.toFixed(2)}A${rI} ${rI} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)}Z`;
+}
+function drawDonutPair(el, groups){
+  if(!el || !groups || !groups.length) return;
+  const W = Math.max(300, el.clientWidth || 560);
+  const cols = W < 640 ? 1 : Math.min(2, groups.length);
+  const colW = cols === 1 ? W : W / groups.length;
+  const rO = Math.max(34, Math.min(56, colW / 2 - 30)), rI = Math.round(rO * 0.6);
+  const titleH = 24, donutH = rO * 2 + 16, legRow = 23, padB = 10, gapY = 18;
+  const valTxt = (r, total) => `${r.value} · ${total ? (r.value / total * 100).toFixed(0) : 0}%`;
+
+  // 预计算每个 group 的内容高度与字号（窄屏可能降级）
+  const parts = groups.map(g => {
+    const total = g.rows.reduce((a, r) => a + r.value, 0);
+    let nFs = 14, vFs = 14;
+    let maxN = Math.max(...g.rows.map(r => tw(r.name, nFs + 'px ' + FONT)));
+    let maxV = Math.max(...g.rows.map(r => tw(valTxt(r, total), vFs + 'px ' + MONO)));
+    let blockW = 16 + maxN + 14 + maxV;
+    if(blockW > colW - 12){                 // 窄屏兜底：保持 14px 下限，改纵向堆叠名称+数值
+      return {g, total, nFs, vFs, maxN, maxV, blockW, stacked:true};
+    }
+    return {g, total, nFs, vFs, maxN, maxV, blockW, stacked:false};
+  });
+
+  const partH = p => titleH + donutH + 12 + p.g.rows.length * (p.stacked ? legRow * 2.0 : legRow) + padB;
+  let H, colH;
+  if(cols === 1){ H = parts.reduce((a,p)=>a + partH(p), 0) + gapY * (parts.length - 1); colH = H; }
+  else { H = Math.max(...parts.map(partH)); colH = H; }
+
+  let s = svgOpen(W, H);
+  let oy = 0;
+  parts.forEach((p, gi) => {
+    const ox = cols === 1 ? 0 : gi * colW;
+    const baseY = cols === 1 ? oy : 0;
+    const cx = ox + colW / 2, cy = baseY + titleH + rO + 4;
+    s += `<text x="${cx}" y="${baseY + 15}" text-anchor="middle" fill="${C.fg3}" font-family="${MONO}" font-size="14">${esc(p.g.title)}</text>`;
+    let a = -Math.PI / 2;
+    p.g.rows.forEach(r => {
+      const sweep = p.total ? r.value / p.total * Math.PI * 2 : 0;
+      const gap = Math.min(0.022, sweep * 0.1);
+      s += `<path class="svg-bar" d="${arcPath(cx, cy, rO, rI, a + gap / 2, a + sweep - gap / 2)}" fill="${r.color}" stroke="${C.ink850}" stroke-width="1">`
+        +  `<title>${esc(r.name)}：${r.value} 例 · ${p.total ? (r.value / p.total * 100).toFixed(1) : 0}%</title></path>`;
+      a += sweep;
+    });
+    s += `<text x="${cx}" y="${cy - 1}" text-anchor="middle" fill="${C.fg}" font-family="${MONO}" font-size="19" font-weight="600">${p.total}</text>`
+      +  `<text x="${cx}" y="${cy + 16}" text-anchor="middle" fill="${C.fg3}" font-family="${FONT}" font-size="14">例</text>`;
+    const ly0 = baseY + titleH + donutH + 12;
+    if(p.stacked){
+      // 窄屏：名称在上、数值在下，整块居中；行内留足间距避免 14px 文字重叠
+      const rowH = legRow * 2.0;
+      p.g.rows.forEach((r, i) => {
+        const y = ly0 + i * rowH;
+        const bx = ox + Math.max(16, (colW - Math.max(p.maxN, p.maxV)) / 2);
+        s += `<rect x="${(bx - 15).toFixed(1)}" y="${(y - 1).toFixed(1)}" width="9" height="9" rx="1" fill="${r.color}"/>`
+          +  `<text x="${bx.toFixed(1)}" y="${(y + 4).toFixed(1)}" dominant-baseline="central" fill="${C.fg2}" font-family="${FONT}" font-size="14">${esc(r.name)}</text>`
+          +  `<text x="${bx.toFixed(1)}" y="${(y + 24).toFixed(1)}" dominant-baseline="central" fill="${C.fg3}" font-family="${MONO}" font-size="14">${esc(valTxt(r, p.total))}</text>`;
+      });
+    } else {
+      const bx = ox + Math.max(8, (colW - p.blockW) / 2);
+      p.g.rows.forEach((r, i) => {
+        const y = ly0 + i * legRow + 7;
+        s += `<rect x="${bx.toFixed(1)}" y="${(y - 4.5).toFixed(1)}" width="9" height="9" rx="1" fill="${r.color}"/>`
+          +  `<text x="${(bx + 16).toFixed(1)}" y="${y}" dominant-baseline="central" fill="${C.fg2}" font-family="${FONT}" font-size="14">${esc(r.name)}</text>`
+          +  `<text x="${(bx + 16 + p.maxN + 14).toFixed(1)}" y="${y}" dominant-baseline="central" fill="${C.fg3}" font-family="${MONO}" font-size="14">${esc(valTxt(r, p.total))}</text>`;
+      });
+    }
+    if(cols === 1) oy += partH(p) + gapY;
+  });
+  el.innerHTML = s + '</svg>';
+  el.style.height = H + 'px';
+}
+
+function drawCharts(){
+  /* C1 行业分布 */
+  const ind = INDUSTRIES.map(i=>({name:i.n, value:CASES.filter(c=>c.ind===i.k).length})).filter(d=>d.value>0).sort((a,b)=>a.value-b.value);
+  drawBars(document.getElementById('c1'), ind.map((d,i)=>({
+    name:d.name, value:d.value,
+    color: i>=ind.length-2 ? C.stamp : C.sys,
+    tip:`${d.name}：${d.value} 例 · 占样本 ${(d.value/24*100).toFixed(0)}%`
+  })), {rowH:32, barH:15, labelSize:14, padR:46});
+
+  /* C2 场景原型分布 */
+  const ar = ARCHETYPES.map(a=>({name:a.n, value:CASES.filter(c=>c.arch.includes(a.k)).length, k:a.k})).sort((a,b)=>a.value-b.value);
+  drawBars(document.getElementById('c2'), ar.map((d,i)=>({
+    name:d.name, value:d.value,
+    color: i>=ar.length-3 ? C.gain : C.sys,
+    tip:`${d.name}：${d.value} 例命中\nNO. ${CASES.filter(c=>c.arch.includes(d.k)).map(c=>pad(c.no)).join(' · ')}`
+  })), {rowH:34, barH:16, labelSize:14, padR:46});
+
+  /* C3 挑战类型频次 */
+  const rk = [...RISK].sort((a,b)=>a.v-b.v);
+  drawBars(document.getElementById('c3'), rk.map((d,i)=>({
+    name:d.name, value:d.v,
+    color: i>=rk.length-2 ? C.risk : (d.name.includes('技术能力') ? C.fg3 : C.sys),
+    tip:`${d.name}：${d.v} / 24 例提及`
+  })), {rowH:30, barH:14, labelSize:14, padR:46, max:24, ticks:[0,6,12,18,24]});
+
+  /* C4 技术栈频次 */
+  const tc = [...TECH].sort((a,b)=>a.v-b.v);
+  drawBars(document.getElementById('c4'), tc.map((d,i)=>({
+    name:d.name, value:d.v,
+    color: i>=tc.length-2 ? C.stamp : C.sys,
+    tip:`${d.name}：${d.v} / 24 例使用`
+  })), {rowH:30, barH:13, labelSize:14, padR:46, max:15, ticks:[0,5,10,15]});
+
+  /* C5 地理 + 部署形态 双环 */
+  drawDonutPair(document.getElementById('c5'), [
+    {title:'地理分布', rows:GEO.map((g,i)=>({name:g.name, value:g.v, color:[C.stamp,C.sys,C.gain][i%3]}))},
+    {title:'部署形态', rows:DEPLOY.map((g,i)=>({name:g.name, value:g.v, color:[C.sys,C.risk,C.stamp,C.gain,C.fg3][i%5]}))}
+  ]);
+}
+
+/* ---- 03 指标墙 ---- */
+(function buildMetrics(){
+  const el = document.getElementById('metricBody');
+  if(!el) return;
+  el.innerHTML = METRICS.map(m=>{
+    let bars;
+    if(m.kind==='na'){
+      bars = `<div class="m-kind">受访者未给出可对比数值，仅描述状态变化 →</div>`;
+    }else{
+      const tag = m.kind==='up' ? '比率型 · 越长越好' : '耗时／工作量型 · 越短越好';
+      bars = `<div class="m-bars">
+        <div class="m-row2"><span class="m-lbl2">改造前</span><div class="m-track2"><div class="m-fill2 bef" style="width:${Math.max(m.b,1.5)}%"></div></div><span class="m-v2 bef">${esc(m.before)}</span></div>
+        <div class="m-row2"><span class="m-lbl2">改造后</span><div class="m-track2"><div class="m-fill2 aft" style="width:${Math.max(m.a,1.5)}%"></div></div><span class="m-v2 aft">${esc(m.after)}</span></div>
+        <div class="m-kind">${tag} · 条长＝数值量级</div>
+      </div>`;
+    }
+    return `<div class="metric-row">
+      <div class="m-no">NO.${pad(m.no)}</div>
+      <div class="m-name"><b>${esc(m.name)}</b>${esc(m.item)}</div>
+      <div class="m-bar">${bars}</div>
+      <div class="m-mult">${esc(m.mult)}<small>${esc(m.note)}</small></div>
+    </div>`;
+  }).join('');
+})();
+
+/* ---- 04 案例档案卡 ---- */
+(function buildCases(){
+  const g = document.getElementById('casesGrid');
+  if(!g) return;
+  g.innerHTML = CASES.map(c=>{
+    const tags = [`<span class="tag ind">${esc((INDUSTRIES.find(i=>i.k===c.ind)||{n:c.ind}).n)}</span>`,
+                  `<span class="tag geo">${esc(c.geo)}</span>`]
+      .concat(c.arch.map(a=>`<span class="tag arch">${esc((ARCHETYPES.find(x=>x.k===a)||{n:a}).n)}</span>`)).join('');
+    const div = c.div ? `<div class="div-row">
+        ${c.div.ai.map(x=>`<span class="div-pill ai">AI · ${esc(x)}</span>`).join('')}
+        ${c.div.sys.map(x=>`<span class="div-pill sys">系统 · ${esc(x)}</span>`).join('')}
+        ${c.div.hu.map(x=>`<span class="div-pill hu">人 · ${esc(x)}</span>`).join('')}
+      </div>` : '';
+    return `<article class="case" data-no="${c.no}" data-ind="${esc(c.ind)}" data-arch="${c.arch.map(esc).join(',')}">
+      <div class="case-top">
+        <div class="case-no">NO.${pad(c.no)}</div>
+        <div class="case-t">
+          <h3 class="case-title">${esc(c.title)}</h3>
+          <div class="tags">${tags}</div>
+        </div>
+      </div>
+      <div class="case-body">
+        <div class="seg"><div class="seg-h pain">痛点场景 · Q1</div><p>${esc(c.pain)}</p></div>
+        <div class="seg"><div class="seg-h before">原有做法 · Q2</div><p>${esc(c.before)}</p></div>
+        <div class="seg"><div class="seg-h ai">AI 方案与关键步骤 · Q3</div><p>${esc(c.ai)}</p>${div}${renderFlow(c.no)}</div>
+        <div class="seg"><div class="seg-h gain">实际效果 · Q4</div>
+          <ul class="gain-list">${c.gain.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+        <div class="case-extra">
+          <div class="seg"><div class="seg-h risk">新问题与挑战 · Q5</div><p>${esc(c.risk)}</p></div>
+        </div>
+        <div class="seg quote-seg"><div class="seg-h quote">受访者原话 · Q6</div><p>「${esc(c.quote)}」</p></div>
+      </div>
+      <button class="case-toggle" aria-expanded="false">展开挑战与解法 ＋</button>
+    </article>`;
+  }).join('');
+
+  g.addEventListener('click', e=>{
+    const btn = e.target.closest('.case-toggle');
+    if(!btn) return;
+    const card = btn.closest('.case');
+    const open = card.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open?'true':'false');
+    btn.textContent = open ? '收起 －' : '展开挑战与解法 ＋';
+  });
+})();
+
+/* ---- 05 筛选器 ---- */
+const fEl = document.getElementById('filters');
+let fInd = null, fArch = null;
+(function buildFilters(){
+  if(!fEl) return;
+  const chip = (t,k,label)=>`<button class="chip n" type="button" data-t="${t}" data-k="${esc(k)}">${esc(label)}</button>`;
+  const usedInd = INDUSTRIES.filter(i=>CASES.some(c=>c.ind===i.k));
+  fEl.innerHTML =
+    '<span class="f-label">行业</span>' +
+    usedInd.map(i=>chip('ind', i.k, `${i.n} ${CASES.filter(c=>c.ind===i.k).length}`)).join('') +
+    '<span class="f-label" style="margin-left:18px">场景原型</span>' +
+    ARCHETYPES.map(a=>chip('arch', a.k, `${a.n} ${CASES.filter(c=>c.arch.includes(a.k)).length}`)).join('') +
+    '<span class="f-count" id="fcount"></span>';
+  fEl.addEventListener('click', e=>{
+    const b = e.target.closest('.chip');
+    if(!b) return;
+    const t = b.dataset.t, k = b.dataset.k;
+    if(t==='ind') fInd = (fInd===k?null:k);
+    else fArch = (fArch===k?null:k);
+    fEl.querySelectorAll('.chip').forEach(c=>{
+      const on = (c.dataset.t==='ind' && c.dataset.k===fInd) || (c.dataset.t==='arch' && c.dataset.k===fArch);
+      c.classList.toggle('on', on);
+    });
+    applyFilter();
+  });
+  applyFilter();
+})();
+function applyFilter(){
+  const cards = document.querySelectorAll('.case');
+  let n = 0;
+  cards.forEach(c=>{
+    const okI = !fInd || c.dataset.ind===fInd;
+    const okA = !fArch || c.dataset.arch.split(',').includes(fArch);
+    const show = okI && okA;
+    c.classList.toggle('dim', !show);
+    if(show) n++;
+  });
+  const fc = document.getElementById('fcount');
+  if(fc) fc.innerHTML = `显示 <b>${n}</b> / ${CASES.length} 份档案`;
+  fixFlowArrows();
+}
+function resetFilters(){
+  fInd = null; fArch = null;
+  if(fEl) fEl.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  applyFilter();
+}
+
+/* ---- 06 反模式 ---- */
+(function buildAnti(){
+  const el = document.getElementById('antiList');
+  if(!el) return;
+  el.innerHTML = ANTI.map((a,i)=>`<div class="anti-item">
+      <div class="anti-x" aria-hidden="true">✕</div>
+      <div><div class="anti-t">${pad(i+1)} · ${esc(a.t)}</div><div class="anti-d">${a.d}</div></div>
+    </div>`).join('');
+})();
+
+/* ---- 07 金句墙 ---- */
+(function buildQuotes(){
+  const el = document.getElementById('quotesGrid');
+  if(!el) return;
+  el.innerHTML = QUOTES.map(q=>`<blockquote class="quote-card">
+      <div class="quote-mark" aria-hidden="true">「</div>
+      <p class="quote-txt">${esc(q.t)}</p>
+      <footer class="quote-src"><b>${esc(q.s.split(' ')[0])}</b> ${esc(q.s.split(' ').slice(1).join(' '))}</footer>
+    </blockquote>`).join('');
+})();
+
+/* ---- 08 导航高亮 + resize ---- */
+(function navSpy(){
+  const links = [...document.querySelectorAll('#nav a')];
+  const secs = links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const obs = new IntersectionObserver(es=>{
+    es.forEach(e=>{
+      if(!e.isIntersecting) return;
+      links.forEach(l=>l.classList.toggle('on', l.getAttribute('href')==='#'+e.target.id));
+    });
+  }, {rootMargin:'-30% 0px -60% 0px', threshold:0});
+  secs.forEach(s=>obs.observe(s));
+})();
+
+window.addEventListener('resize', ()=>{ drawCharts(); fixFlowArrows(); });
+setTimeout(fixFlowArrows, 0);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(fixFlowArrows).catch(()=>{});
+window.addEventListener('load', fixFlowArrows);
+if(document.readyState==='complete' || document.readyState==='interactive'){ setTimeout(drawCharts,0); }
+else window.addEventListener('DOMContentLoaded', drawCharts);
+window.addEventListener('load', ()=>{ drawCharts(); fixFlowArrows(); });
+</script>
 </body>
 </html>
